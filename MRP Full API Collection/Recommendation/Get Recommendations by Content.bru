@@ -1,0 +1,19 @@
+meta {
+  name: Get Recommendations by Content
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:8080/api/users/1/recommendations?type=content
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: content
+}
+
+settings {
+  encodeUrl: true
+}

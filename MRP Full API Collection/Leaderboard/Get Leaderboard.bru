@@ -1,0 +1,15 @@
+meta {
+  name: Get Leaderboard
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:8080/api/leaderboard
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

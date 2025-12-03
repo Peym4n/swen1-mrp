@@ -1,0 +1,15 @@
+meta {
+  name: Full Search & Filter
+  type: http
+  seq: 6
+}
+
+get {
+  url: http://localhost:8080/api/media?title=inception&genre=sci-fi&mediaType=movie&releaseYear=2010&ageRestriction=12&rating=4&sortBy=title
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Rate Media
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/media/1/rate
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "stars": 5,
+    "comment": "Amazing movie!"
+  }
+}
+
+settings {
+  encodeUrl: true
+}
