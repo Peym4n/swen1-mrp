@@ -1,0 +1,17 @@
+services:
+  db:
+    container_name: mrp_db
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: letmein
+      PGDATA: /data/postgres
+      POSTGRES_DB: mrp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/data/postgres
+    restart: unless-stopped
+
+volumes:
+  db_data:
