@@ -9,17 +9,36 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class DatabaseConnection {
+public class DatabaseManager {
+    private static DatabaseManager instance;
+    private Connection connection;
 
-    public static Connection getConnection() throws SQLException {
-        String dbUrl = "jdbc:postgresql://localhost:5432/mrp_db?user=postgres&password=letmein";
-        return DriverManager.getConnection(dbUrl);
+    private DatabaseManager() {
+        try {
+            String dbUrl = "jdbc:postgresql://localhost:5432/mrp_db?user=postgres&password=letmein";
+            this.connection = DriverManager.getConnection(dbUrl);
+            initializeDatabase();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to connect to database", e);
+        }
     }
 
-    public static void executeInitScript() {
-        try (Connection conn = getConnection()) {
+    public static synchronized DatabaseManager getInstance() {
+        if (instance == null) {
+            instance = new DatabaseManager();
+        }
+        return instance;
+    }
+
+    public Connection getConnection() {
+        // TODO: a simple check if connection is closed/invalid
+        return connection;
+    }
+
+    private void initializeDatabase() {
+        try {
             String initScript = readInitScript();
-            try (Statement stmt = conn.createStatement()) {
+            try (Statement stmt = connection.createStatement()) {
                 stmt.execute(initScript);
                 System.out.println("Database initialized successfully.");
             }
@@ -29,8 +48,8 @@ public class DatabaseConnection {
         }
     }
 
-    private static String readInitScript() throws IOException {
-        try (InputStream is = DatabaseConnection.class.getClassLoader().getResourceAsStream("db/init.sql")) {
+    private String readInitScript() throws IOException {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("db/init.sql")) {
             if (is == null) {
                 throw new IOException("db/init.sql not found");
             }
