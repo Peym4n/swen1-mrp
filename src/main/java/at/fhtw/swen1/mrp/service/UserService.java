@@ -37,7 +37,13 @@ public class UserService {
             String hashedInput = hashPassword(password);
             
             if (user.getPassword().equals(hashedInput)) {
-                return "mrp-token-" + user.getUsername(); 
+                // Generate token with random part
+                String token = "mrp-token-" + java.util.UUID.randomUUID().toString();
+                
+                // Store/Update token in DB
+                userRepository.updateToken(user.getId(), token);
+                
+                return token; 
             }
         }
         throw new RuntimeException("Invalid credentials");
@@ -60,10 +66,11 @@ public class UserService {
             throw new RuntimeException("Could not hash password", e);
         }
     }
+    
     public java.util.Optional<User> getUserByToken(String token) {
-        if (token != null && token.startsWith("Bearer mrp-token-")) {
-            String username = token.substring("Bearer mrp-token-".length());
-            return userRepository.findByUsername(username);
+        if (token != null && token.startsWith("Bearer ")) {
+            String cleanToken = token.substring("Bearer ".length());
+            return userRepository.findByToken(cleanToken);
         }
         return java.util.Optional.empty();
     }

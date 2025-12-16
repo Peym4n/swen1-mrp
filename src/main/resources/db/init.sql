@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,       -- 
     email VARCHAR(100),                   -- From OpenAPI UserProfileUpdate
     favorite_genre VARCHAR(50),           -- From OpenAPI UserProfileUpdate
+    token VARCHAR(255),                   -- Auth token
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

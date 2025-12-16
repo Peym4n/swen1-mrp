@@ -8,6 +8,7 @@ public class User {
     private String password;
     private String email;
     private String favoriteGenre;
+    private String token;
     private LocalDateTime createdAt;
 
     private User(Builder builder) {
@@ -16,6 +17,7 @@ public class User {
         this.password = builder.password;
         this.email = builder.email;
         this.favoriteGenre = builder.favoriteGenre;
+        this.token = builder.token;
         this.createdAt = builder.createdAt;
     }
 
@@ -25,11 +27,13 @@ public class User {
     public String getPassword() { return password; }
     public String getEmail() { return email; }
     public String getFavoriteGenre() { return favoriteGenre; }
+    public String getToken() { return token; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     // Setters (for non-builder updates)
     public void setId(Integer id) { this.id = id; }
     public void setPassword(String password) { this.password = password; }
+    public void setToken(String token) { this.token = token; }
 
     public static class Builder {
         private Integer id;
@@ -37,6 +41,7 @@ public class User {
         private String password;
         private String email;
         private String favoriteGenre;
+        private String token;
         private LocalDateTime createdAt;
 
         public Builder() {}
@@ -63,6 +68,11 @@ public class User {
 
         public Builder favoriteGenre(String favoriteGenre) {
             this.favoriteGenre = favoriteGenre;
+            return this;
+        }
+
+        public Builder token(String token) {
+            this.token = token;
             return this;
         }
 

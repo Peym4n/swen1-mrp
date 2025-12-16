@@ -50,6 +50,7 @@ public class UserRepository {
                         .password(rs.getString("password"))
                         .email(rs.getString("email"))
                         .favoriteGenre(rs.getString("favorite_genre"))
+                        .token(rs.getString("token"))
                         .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                         .build();
                     return Optional.of(user);
@@ -57,6 +58,46 @@ public class UserRepository {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find user", e);
+        }
+        return Optional.empty();
+    }
+
+    public void updateToken(Integer userId, String token) {
+        String sql = "UPDATE users SET token = ? WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, token);
+            stmt.setInt(2, userId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update token", e);
+        }
+    }
+
+    public Optional<User> findByToken(String token) {
+        String sql = "SELECT * FROM users WHERE token = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, token);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User.Builder()
+                        .id(rs.getInt("id"))
+                        .username(rs.getString("username"))
+                        .password(rs.getString("password"))
+                        .email(rs.getString("email"))
+                        .favoriteGenre(rs.getString("favorite_genre"))
+                        .token(rs.getString("token"))
+                        .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+                        .build();
+                    return Optional.of(user);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find user by token", e);
         }
         return Optional.empty();
     }
