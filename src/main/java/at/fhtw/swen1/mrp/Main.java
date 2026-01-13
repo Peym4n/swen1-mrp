@@ -26,11 +26,13 @@ public class Main {
         // Wiring
         UserRepository userRepository = new UserRepository();
         UserService userService = new UserService(userRepository);
-        UserHandler userHandler = new UserHandler(userService);
-
+        
         // Rating
         RatingRepository ratingRepository = new RatingRepository();
         RatingService ratingService = new RatingService(ratingRepository);
+        
+        // Handlers
+        UserHandler userHandler = new UserHandler(userService, ratingService);
         RatingHandler ratingHandler = new RatingHandler(ratingService, userService);
 
         MediaRepository mediaRepository = new MediaRepository();

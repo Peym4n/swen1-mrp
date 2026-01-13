@@ -1,13 +1,16 @@
 package at.fhtw.swen1.mrp.handler;
 
+import at.fhtw.swen1.mrp.model.Rating;
 import at.fhtw.swen1.mrp.model.User;
 import at.fhtw.swen1.mrp.service.RatingService;
 import at.fhtw.swen1.mrp.service.UserService;
+import at.fhtw.swen1.mrp.dto.RatingDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -35,11 +38,6 @@ public class RatingHandler implements HttpHandler {
             }
 
             // Path parsing: /api/ratings/{id}/...
-            // Expected paths:
-            // /api/ratings/{id} (PUT, DELETE)
-            // /api/ratings/{id}/confirm (POST)
-            // /api/ratings/{id}/like (POST)
-
             String prefix = "/api/ratings/";
             if (path.startsWith(prefix)) {
                 String subPath = path.substring(prefix.length());
@@ -107,21 +105,28 @@ public class RatingHandler implements HttpHandler {
     }
 
     private void handleUpdateRating(HttpExchange exchange, int ratingId, User user) throws IOException {
-        // Implementation for PUT (Todo: add validation/ownership check)
-        // For Phase 2, we created the method in Repo but not fully Service logic for UPDATE yet?
-        // Wait, RatingService has rateMedia (create) only.
-        // I need to add update/delete logic to Service ideally, or Repo directly.
-        // Let's assume for now 200 OK.
-        sendResponse(exchange, 501, "{\"error\": \"Not Implemented yet\"}");
+        InputStream requestBody = exchange.getRequestBody();
+        RatingDTO ratingDTO = objectMapper.readValue(requestBody, RatingDTO.class);
+
+        try {
+            Rating updated = ratingService.updateRating(user.getId(), ratingId, ratingDTO.getStars(), ratingDTO.getComment());
+            String response = objectMapper.writeValueAsString(updated);
+            sendResponse(exchange, 200, response);
+        } catch (IllegalArgumentException e) {
+            sendResponse(exchange, 400, "{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
 
     private void handleDeleteRating(HttpExchange exchange, int ratingId, User user) throws IOException {
-        // Todo: Add service method for delete
-        sendResponse(exchange, 501, "{\"error\": \"Not Implemented yet\"}");
+        try {
+            ratingService.deleteRating(user.getId(), ratingId);
+            sendResponse(exchange, 204, "");
+        } catch (IllegalArgumentException e) {
+            sendResponse(exchange, 400, "{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
 
     private void handleConfirmRating(HttpExchange exchange, int ratingId) throws IOException {
-        // Technically logic is in Service
         try {
             ratingService.confirmRating(ratingId);
             sendResponse(exchange, 200, "{\"message\": \"Rating confirmed\"}");

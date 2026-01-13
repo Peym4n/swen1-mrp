@@ -90,4 +90,59 @@ class RatingServiceTest {
             ratingService.confirmRating(ratingId);
         });
     }
+
+    @Test
+    void testUpdateRating_Success() {
+        int userId = 1;
+        int ratingId = 5;
+        Rating existing = new Rating.Builder().id(ratingId).userId(userId).stars(3).comment("Old").build();
+        
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(existing));
+        
+        Rating updated = ratingService.updateRating(userId, ratingId, 5, "New");
+        
+        assertEquals(5, updated.getStars());
+        assertEquals("New", updated.getComment());
+        verify(ratingRepository).update(any(Rating.class));
+    }
+
+    @Test
+    void testUpdateRating_Unauthorized() {
+        int userId = 1;
+        int otherUserId = 2;
+        int ratingId = 5;
+        Rating existing = new Rating.Builder().id(ratingId).userId(otherUserId).stars(3).build();
+        
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(existing));
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            ratingService.updateRating(userId, ratingId, 5, "New");
+        });
+    }
+
+    @Test
+    void testDeleteRating_Success() {
+        int userId = 1;
+        int ratingId = 5;
+        Rating existing = new Rating.Builder().id(ratingId).userId(userId).build();
+        
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(existing));
+        
+        ratingService.deleteRating(userId, ratingId);
+        
+        verify(ratingRepository).delete(ratingId);
+    }
+
+    @Test
+    void testDeleteRating_Unauthorized() {
+        int userId = 1;
+        int ratingId = 5;
+        Rating existing = new Rating.Builder().id(ratingId).userId(99).build();
+        
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(existing));
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            ratingService.deleteRating(userId, ratingId);
+        });
+    }
 }
