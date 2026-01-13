@@ -2,9 +2,12 @@ package at.fhtw.swen1.mrp.handler;
 
 import at.fhtw.swen1.mrp.model.Media;
 import at.fhtw.swen1.mrp.model.User;
+import at.fhtw.swen1.mrp.model.Rating;
 import at.fhtw.swen1.mrp.service.MediaService;
 import at.fhtw.swen1.mrp.service.UserService;
+import at.fhtw.swen1.mrp.service.RatingService;
 import at.fhtw.swen1.mrp.dto.MediaDTO;
+import at.fhtw.swen1.mrp.dto.RatingDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -20,11 +23,13 @@ import java.util.HashMap;
 public class MediaHandler implements HttpHandler {
     private final MediaService mediaService;
     private final UserService userService;
+    private final RatingService ratingService;
     private final ObjectMapper objectMapper;
 
-    public MediaHandler(MediaService mediaService, UserService userService) {
+    public MediaHandler(MediaService mediaService, UserService userService, RatingService ratingService) {
         this.mediaService = mediaService;
         this.userService = userService;
+        this.ratingService = ratingService;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -42,12 +47,61 @@ public class MediaHandler implements HttpHandler {
                 } else {
                     sendResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
                 }
+            } else if (path.startsWith("/api/media/") && path.endsWith("/rate")) {
+                // Post media rate
+                // /api/media/{id}/rate
+                if ("POST".equalsIgnoreCase(method)) {
+                    handleRateMedia(exchange, path);
+                } else {
+                    sendResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
+                }
             } else {
                 sendResponse(exchange, 404, "{\"error\": \"Not Found\"}");
             }
         } catch (Exception e) {
             e.printStackTrace();
             sendResponse(exchange, 500, "{\"error\": \"Internal Server Error: " + e.getMessage() + "\"}");
+        }
+    }
+
+    private void handleRateMedia(HttpExchange exchange, String path) throws IOException {
+        // Authenticate
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+        User user = null;
+        if (authHeader != null) {
+            user = userService.getUserByToken(authHeader).orElse(null);
+        }
+        if (user == null) {
+            sendResponse(exchange, 401, "{\"error\": \"Unauthorized\"}");
+            return;
+        }
+
+        // Parse ID
+        String[] parts = path.split("/");
+        // /api/media/{id}/rate
+        // parts[0]="", [1]="api", [2]="media", [3]="{id}", [4]="rate"
+        if (parts.length < 5) {
+             sendResponse(exchange, 400, "{\"error\": \"Invalid path\"}");
+             return;
+        }
+        int mediaId;
+        try {
+            mediaId = Integer.parseInt(parts[3]);
+        } catch (NumberFormatException e) {
+             sendResponse(exchange, 400, "{\"error\": \"Invalid Media ID\"}");
+             return;
+        }
+
+        // Parse Body
+        InputStream requestBody = exchange.getRequestBody();
+        RatingDTO ratingDTO = objectMapper.readValue(requestBody, RatingDTO.class);
+        
+        try {
+            Rating rating = ratingService.rateMedia(user.getId(), mediaId, ratingDTO.getStars(), ratingDTO.getComment());
+            String response = objectMapper.writeValueAsString(rating);
+            sendResponse(exchange, 201, response);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+             sendResponse(exchange, 400, "{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 

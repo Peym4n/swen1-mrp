@@ -7,6 +7,9 @@ import at.fhtw.swen1.mrp.repository.MediaRepository;
 import at.fhtw.swen1.mrp.repository.UserRepository;
 import at.fhtw.swen1.mrp.service.MediaService;
 import at.fhtw.swen1.mrp.service.UserService;
+import at.fhtw.swen1.mrp.handler.RatingHandler;
+import at.fhtw.swen1.mrp.repository.RatingRepository;
+import at.fhtw.swen1.mrp.service.RatingService;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -25,14 +28,21 @@ public class Main {
         UserService userService = new UserService(userRepository);
         UserHandler userHandler = new UserHandler(userService);
 
+        // Rating
+        RatingRepository ratingRepository = new RatingRepository();
+        RatingService ratingService = new RatingService(ratingRepository);
+        RatingHandler ratingHandler = new RatingHandler(ratingService, userService);
+
         MediaRepository mediaRepository = new MediaRepository();
         MediaService mediaService = new MediaService(mediaRepository);
-        MediaHandler mediaHandler = new MediaHandler(mediaService, userService);
+        // Note: mediaHandler checks path for /rate and uses ratingService
+        MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService);
 
         // Contexts
         server.createContext("/api/users/register", userHandler);
         server.createContext("/api/users/login", userHandler);
         server.createContext("/api/media", mediaHandler);
+        server.createContext("/api/ratings", ratingHandler);
 
         server.setExecutor(null);
         server.start();
