@@ -101,4 +101,17 @@ public class UserRepository {
         }
         return Optional.empty();
     }
+    public void update(User user) {
+        String sql = "UPDATE users SET email = ?, favorite_genre = ? WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, user.getEmail());
+            stmt.setString(2, user.getFavoriteGenre());
+            stmt.setInt(3, user.getId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update user", e);
+        }
+    }
 }

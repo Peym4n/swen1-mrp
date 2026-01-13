@@ -42,6 +42,8 @@ public class UserHandler implements HttpHandler {
                 handleLogin(exchange);
             } else if (path.matches("^/api/users/\\d+/ratings$") && "GET".equalsIgnoreCase(method)) {
                 handleGetUserRatings(exchange, path);
+            } else if (path.matches("^/api/users/\\d+/profile$") && "PUT".equalsIgnoreCase(method)) {
+                handleUpdateProfile(exchange, path);
             } else {
                 sendResponse(exchange, 404, "{\"error\": \"Not Found\"}");
             }
@@ -65,7 +67,41 @@ public class UserHandler implements HttpHandler {
         String response = objectMapper.writeValueAsString(ratings);
         sendResponse(exchange, 200, response);
     }
+    
+    private void handleUpdateProfile(HttpExchange exchange, String path) throws IOException {
+        User user = authenticate(exchange);
+        if (user == null) return;
+        
+        // Path: /api/users/{id}/profile
+        String[] parts = path.split("/");
+        int pathUserId = Integer.parseInt(parts[3]);
+        
+        if (user.getId() != pathUserId) {
+            sendResponse(exchange, 403, "{\"error\": \"Forbidden\"}");
+            return;
+        }
+        
+        InputStream requestBody = exchange.getRequestBody();
+        UserDTO dto = objectMapper.readValue(requestBody, UserDTO.class);
+        
+        userService.updateProfile(user.getId(), dto.getEmail(), dto.getFavoriteGenre());
+        
+        // Return updated profile or just 200 OK
+        sendResponse(exchange, 200, "{\"message\": \"Profile updated\"}");
+    }
 
+    private User authenticate(HttpExchange exchange) throws IOException {
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+        User user = null;
+        if (authHeader != null) {
+            user = userService.getUserByToken(authHeader).orElse(null);
+        }
+        if (user == null) {
+            sendResponse(exchange, 401, "{\"error\": \"Unauthorized\"}");
+            return null;
+        }
+        return user;
+    }
 
     private void handleRegister(HttpExchange exchange) throws IOException {
         InputStream requestBody = exchange.getRequestBody();

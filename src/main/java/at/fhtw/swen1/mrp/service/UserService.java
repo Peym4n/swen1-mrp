@@ -74,4 +74,16 @@ public class UserService {
         }
         return java.util.Optional.empty();
     }
+    
+    public User updateProfile(int userId, String email, String favoriteGenre) {
+        User user = new User.Builder()
+                .id(userId)
+                .email(email)
+                .favoriteGenre(favoriteGenre)
+                .build();
+                
+        userRepository.update(user);
+        
+        return user;
+    }
 }
