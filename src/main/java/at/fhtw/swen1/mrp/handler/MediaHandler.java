@@ -47,8 +47,18 @@ public class MediaHandler implements HttpHandler {
                 } else {
                     sendResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
                 }
-            } else if (path.startsWith("/api/media/") && path.endsWith("/rate")) {
-                // Post media rate
+            } else if (path.matches("^/api/media/\\d+$")) {
+                 // /api/media/{id}
+                 if ("GET".equalsIgnoreCase(method)) {
+                     handleGetMediaById(exchange, path);
+                 } else if ("PUT".equalsIgnoreCase(method)) {
+                     handleUpdateMedia(exchange, path);
+                 } else if ("DELETE".equalsIgnoreCase(method)) {
+                     handleDeleteMedia(exchange, path);
+                 } else {
+                     sendResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
+                 }
+            } else if (path.matches("^/api/media/\\d+/rate$")) {
                 // /api/media/{id}/rate
                 if ("POST".equalsIgnoreCase(method)) {
                     handleRateMedia(exchange, path);
@@ -62,6 +72,77 @@ public class MediaHandler implements HttpHandler {
             e.printStackTrace();
             sendResponse(exchange, 500, "{\"error\": \"Internal Server Error: " + e.getMessage() + "\"}");
         }
+    }
+
+    private void handleGetMediaById(HttpExchange exchange, String path) throws IOException {
+        int mediaId = parseIdFromPath(path, 3);
+        java.util.Optional<Media> media = mediaService.getMediaById(mediaId);
+        
+        if (media.isPresent()) {
+            String response = objectMapper.writeValueAsString(media.get());
+            sendResponse(exchange, 200, response);
+        } else {
+            sendResponse(exchange, 404, "{\"error\": \"Media not found\"}");
+        }
+    }
+
+    private void handleUpdateMedia(HttpExchange exchange, String path) throws IOException {
+        User user = authenticate(exchange);
+        if (user == null) return;
+        
+        int mediaId = parseIdFromPath(path, 3);
+        InputStream requestBody = exchange.getRequestBody();
+        MediaDTO mediaDTO = objectMapper.readValue(requestBody, MediaDTO.class);
+        
+        Media mediaUpdates = new Media.Builder()
+                .title(mediaDTO.getTitle())
+                .description(mediaDTO.getDescription())
+                .mediaType(mediaDTO.getMediaType())
+                .releaseYear(mediaDTO.getReleaseYear())
+                .ageRestriction(mediaDTO.getAgeRestriction())
+                .genres(mediaDTO.getGenres())
+                .build();
+                
+        try {
+            Media updated = mediaService.updateMedia(mediaId, mediaUpdates, user.getId());
+            String response = objectMapper.writeValueAsString(updated);
+            sendResponse(exchange, 200, response);
+        } catch (IllegalArgumentException e) {
+            // Improve error mapping later if needed.
+             sendResponse(exchange, 400, "{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    private void handleDeleteMedia(HttpExchange exchange, String path) throws IOException {
+        User user = authenticate(exchange);
+        if (user == null) return;
+        
+        int mediaId = parseIdFromPath(path, 3);
+        
+        try {
+            mediaService.deleteMedia(mediaId, user.getId());
+            sendResponse(exchange, 204, "");
+        } catch (IllegalArgumentException e) {
+             sendResponse(exchange, 400, "{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    private int parseIdFromPath(String path, int index) {
+        String[] parts = path.split("/");
+        return Integer.parseInt(parts[index]);
+    }
+    
+    private User authenticate(HttpExchange exchange) throws IOException {
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+        User user = null;
+        if (authHeader != null) {
+            user = userService.getUserByToken(authHeader).orElse(null);
+        }
+        if (user == null) {
+            sendResponse(exchange, 401, "{\"error\": \"Unauthorized\"}");
+            return null;
+        }
+        return user;
     }
 
     private void handleRateMedia(HttpExchange exchange, String path) throws IOException {

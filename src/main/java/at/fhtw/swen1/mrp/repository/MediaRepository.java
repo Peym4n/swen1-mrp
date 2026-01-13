@@ -94,6 +94,76 @@ public class MediaRepository {
         return mediaList;
     }
 
+    public java.util.Optional<Media> findById(int id) {
+        String sql = "SELECT m.*, string_agg(mg.genre, ',') as genres FROM media m LEFT JOIN media_genres mg ON m.id = mg.media_id WHERE m.id = ? GROUP BY m.id";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return java.util.Optional.of(mapResultSetToMedia(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find media by id", e);
+        }
+        return java.util.Optional.empty();
+    }
+
+    public void update(Media media) {
+        String sql = "UPDATE media SET title = ?, description = ?, media_type = ?, release_year = ?, age_restriction = ? WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, media.getTitle());
+            stmt.setString(2, media.getDescription());
+            stmt.setString(3, media.getMediaType());
+            stmt.setInt(4, media.getReleaseYear());
+            stmt.setInt(5, media.getAgeRestriction());
+            stmt.setInt(6, media.getId());
+            
+            stmt.executeUpdate();
+            
+            // Update genres: Delete all and re-insert
+            if (media.getGenres() != null) {
+                String deleteGenresSql = "DELETE FROM media_genres WHERE media_id = ?";
+                try (PreparedStatement delStmt = conn.prepareStatement(deleteGenresSql)) {
+                    delStmt.setInt(1, media.getId());
+                    delStmt.executeUpdate();
+                }
+                
+                if (!media.getGenres().isEmpty()) {
+                    String insertGenreSql = "INSERT INTO media_genres (media_id, genre) VALUES (?, ?)";
+                    try (PreparedStatement insStmt = conn.prepareStatement(insertGenreSql)) {
+                        for (String genre : media.getGenres()) {
+                            insStmt.setInt(1, media.getId());
+                            insStmt.setString(2, genre);
+                            insStmt.addBatch();
+                        }
+                        insStmt.executeBatch();
+                    }
+                }
+            }
+            
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update media", e);
+        }
+    }
+
+    public void delete(int id) {
+        // ON DELETE CASCADE is set in DB schema for media_genres
+        String sql = "DELETE FROM media WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete media", e);
+        }
+    }
+
     private Media mapResultSetToMedia(ResultSet rs) throws SQLException {
         String genresStr = rs.getString("genres");
         List<String> genres = new ArrayList<>();
