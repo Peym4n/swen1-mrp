@@ -44,3 +44,21 @@ CREATE TABLE IF NOT EXISTS ratings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, media_id)
 );
+
+-- Rating Likes Table
+-- Tracks which users liked which ratings.
+CREATE TABLE rating_likes (
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    rating_id INT REFERENCES ratings(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, rating_id) -- Enforces 1 like per user per rating
+);
+
+-- Favorites Table
+-- Tracks user favorite lists.
+CREATE TABLE favorites (
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    media_id INT REFERENCES media(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, media_id)
+);
