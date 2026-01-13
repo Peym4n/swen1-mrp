@@ -6,6 +6,7 @@ import at.fhtw.swen1.mrp.model.Media;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class MediaRepository {
     private final DatabaseManager databaseManager;
@@ -94,7 +95,7 @@ public class MediaRepository {
         return mediaList;
     }
 
-    public java.util.Optional<Media> findById(int id) {
+    public Optional<Media> findById(int id) {
         String sql = "SELECT m.*, string_agg(mg.genre, ',') as genres FROM media m LEFT JOIN media_genres mg ON m.id = mg.media_id WHERE m.id = ? GROUP BY m.id";
         Connection conn = databaseManager.getConnection();
         
@@ -102,13 +103,13 @@ public class MediaRepository {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return java.util.Optional.of(mapResultSetToMedia(rs));
+                    return Optional.of(mapResultSetToMedia(rs));
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find media by id", e);
         }
-        return java.util.Optional.empty();
+        return Optional.empty();
     }
 
     public void update(Media media) {

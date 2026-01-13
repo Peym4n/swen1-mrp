@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -102,7 +103,7 @@ public class MediaHandler implements HttpHandler {
 
     private void handleGetMediaById(HttpExchange exchange, String path) throws IOException {
         int mediaId = parseIdFromPath(path, 3);
-        java.util.Optional<Media> media = mediaService.getMediaById(mediaId);
+        Optional<Media> media = mediaService.getMediaById(mediaId);
         
         if (media.isPresent()) {
             String response = objectMapper.writeValueAsString(media.get());

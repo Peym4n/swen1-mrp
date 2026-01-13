@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class RatingRepository {
     private final DatabaseManager databaseManager;
@@ -115,7 +116,7 @@ public class RatingRepository {
         }
     }
 
-    public java.util.Optional<Rating> findById(int id) {
+    public Optional<Rating> findById(int id) {
         String sql = "SELECT * FROM ratings WHERE id = ?";
         Connection conn = databaseManager.getConnection();
         
@@ -123,13 +124,13 @@ public class RatingRepository {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return java.util.Optional.of(mapResultSetToRating(rs));
+                    return Optional.of(mapResultSetToRating(rs));
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find rating", e);
         }
-        return java.util.Optional.empty();
+        return Optional.empty();
     }
 
     public void confirmRating(int ratingId) {

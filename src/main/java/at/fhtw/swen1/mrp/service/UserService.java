@@ -4,6 +4,7 @@ import at.fhtw.swen1.mrp.model.User;
 import at.fhtw.swen1.mrp.repository.UserRepository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -38,7 +39,7 @@ public class UserService {
             
             if (user.getPassword().equals(hashedInput)) {
                 // Generate token with random part
-                String token = "mrp-token-" + java.util.UUID.randomUUID().toString();
+                String token = "mrp-token-" + UUID.randomUUID().toString();
                 
                 // Store/Update token in DB
                 userRepository.updateToken(user.getId(), token);
@@ -67,12 +68,12 @@ public class UserService {
         }
     }
     
-    public java.util.Optional<User> getUserByToken(String token) {
+    public Optional<User> getUserByToken(String token) {
         if (token != null && token.startsWith("Bearer ")) {
             String cleanToken = token.substring("Bearer ".length());
             return userRepository.findByToken(cleanToken);
         }
-        return java.util.Optional.empty();
+        return Optional.empty();
     }
     
     public User updateProfile(int userId, String email, String favoriteGenre) {

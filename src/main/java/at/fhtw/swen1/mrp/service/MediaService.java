@@ -4,6 +4,7 @@ import at.fhtw.swen1.mrp.model.Media;
 import at.fhtw.swen1.mrp.repository.MediaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public class MediaService {
     private final MediaRepository mediaRepository;
@@ -32,12 +33,12 @@ public class MediaService {
         return mediaRepository.findAll(title, mediaType, releaseYear, ageRestriction);
     }
     
-    public java.util.Optional<Media> getMediaById(int id) {
+    public Optional<Media> getMediaById(int id) {
         return mediaRepository.findById(id);
     }
 
     public Media updateMedia(int id, Media mediaUpdates, int userId) {
-        java.util.Optional<Media> existingOpt = mediaRepository.findById(id);
+        Optional<Media> existingOpt = mediaRepository.findById(id);
         if (existingOpt.isEmpty()) {
             throw new IllegalArgumentException("Media not found");
         }
@@ -65,7 +66,7 @@ public class MediaService {
     }
 
     public void deleteMedia(int id, int userId) {
-        java.util.Optional<Media> existingOpt = mediaRepository.findById(id);
+        Optional<Media> existingOpt = mediaRepository.findById(id);
         if (existingOpt.isEmpty()) {
             throw new IllegalArgumentException("Media not found");
         }
