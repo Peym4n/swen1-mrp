@@ -6,6 +6,7 @@ import at.fhtw.swen1.mrp.model.Rating;
 import at.fhtw.swen1.mrp.service.MediaService;
 import at.fhtw.swen1.mrp.service.UserService;
 import at.fhtw.swen1.mrp.service.RatingService;
+import at.fhtw.swen1.mrp.service.FavoriteService;
 import at.fhtw.swen1.mrp.dto.MediaDTO;
 import at.fhtw.swen1.mrp.dto.RatingDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,12 +25,14 @@ public class MediaHandler implements HttpHandler {
     private final MediaService mediaService;
     private final UserService userService;
     private final RatingService ratingService;
+    private final FavoriteService favoriteService;
     private final ObjectMapper objectMapper;
 
-    public MediaHandler(MediaService mediaService, UserService userService, RatingService ratingService) {
+    public MediaHandler(MediaService mediaService, UserService userService, RatingService ratingService, FavoriteService favoriteService) {
         this.mediaService = mediaService;
         this.userService = userService;
         this.ratingService = ratingService;
+        this.favoriteService = favoriteService;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -65,12 +68,35 @@ public class MediaHandler implements HttpHandler {
                 } else {
                     sendResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
                 }
+            } else if (path.matches("^/api/media/\\d+/favorite$")) {
+                 if ("POST".equalsIgnoreCase(method)) {
+                     handleFavoriteMedia(exchange, path, true);
+                 } else if ("DELETE".equalsIgnoreCase(method)) {
+                     handleFavoriteMedia(exchange, path, false);
+                 } else {
+                     sendResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
+                 }
             } else {
                 sendResponse(exchange, 404, "{\"error\": \"Not Found\"}");
             }
         } catch (Exception e) {
             e.printStackTrace();
             sendResponse(exchange, 500, "{\"error\": \"Internal Server Error: " + e.getMessage() + "\"}");
+        }
+    }
+    
+    private void handleFavoriteMedia(HttpExchange exchange, String path, boolean isAdd) throws IOException {
+        User user = authenticate(exchange);
+        if (user == null) return;
+        
+        int mediaId = parseIdFromPath(path, 3);
+        
+        if (isAdd) {
+            favoriteService.addFavorite(user.getId(), mediaId);
+            sendResponse(exchange, 201, "{\"message\": \"Added to favorites\"}");
+        } else {
+            favoriteService.removeFavorite(user.getId(), mediaId);
+            sendResponse(exchange, 200, "{\"message\": \"Removed from favorites\"}");
         }
     }
 
@@ -108,7 +134,6 @@ public class MediaHandler implements HttpHandler {
             String response = objectMapper.writeValueAsString(updated);
             sendResponse(exchange, 200, response);
         } catch (IllegalArgumentException e) {
-            // Improve error mapping later if needed.
              sendResponse(exchange, 400, "{\"error\": \"" + e.getMessage() + "\"}");
         }
     }

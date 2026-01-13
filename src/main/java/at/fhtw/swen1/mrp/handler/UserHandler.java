@@ -1,7 +1,9 @@
 package at.fhtw.swen1.mrp.handler;
 
+import at.fhtw.swen1.mrp.model.Media;
 import at.fhtw.swen1.mrp.model.Rating;
 import at.fhtw.swen1.mrp.model.User;
+import at.fhtw.swen1.mrp.service.FavoriteService;
 import at.fhtw.swen1.mrp.service.RatingService;
 import at.fhtw.swen1.mrp.service.UserService;
 import at.fhtw.swen1.mrp.dto.UserDTO;
@@ -18,16 +20,18 @@ import java.util.List;
 public class UserHandler implements HttpHandler {
     private final UserService userService;
     private final RatingService ratingService;
+    private final FavoriteService favoriteService;
     private final ObjectMapper objectMapper;
 
-    public UserHandler(UserService userService, RatingService ratingService) {
+    public UserHandler(UserService userService, RatingService ratingService, FavoriteService favoriteService) {
         this.userService = userService;
         this.ratingService = ratingService;
+        this.favoriteService = favoriteService;
         this.objectMapper = new ObjectMapper();
     }
     
     public UserHandler(UserService userService) {
-        this(userService, null);
+        this(userService, null, null);
     }
 
     @Override
@@ -44,6 +48,8 @@ public class UserHandler implements HttpHandler {
                 handleGetUserRatings(exchange, path);
             } else if (path.matches("^/api/users/\\d+/profile$") && "PUT".equalsIgnoreCase(method)) {
                 handleUpdateProfile(exchange, path);
+            } else if (path.matches("^/api/users/\\d+/favorites$") && "GET".equalsIgnoreCase(method)) {
+                handleGetFavorites(exchange, path);
             } else {
                 sendResponse(exchange, 404, "{\"error\": \"Not Found\"}");
             }
@@ -51,6 +57,22 @@ public class UserHandler implements HttpHandler {
             e.printStackTrace();
             sendResponse(exchange, 400, "{\"error\": \"" + e.getMessage() + "\"}");
         }
+    }
+    
+    private void handleGetFavorites(HttpExchange exchange, String path) throws IOException {
+        if (favoriteService == null) {
+            sendResponse(exchange, 500, "{\"error\": \"FavoriteService not initialized\"}");
+            return;
+        }
+
+        // /api/users/{id}/favorites
+        String[] parts = path.split("/");
+        int userId = Integer.parseInt(parts[3]);
+
+        // List<Media>
+        List<Media> favorites = favoriteService.getFavorites(userId);
+        String response = objectMapper.writeValueAsString(favorites);
+        sendResponse(exchange, 200, response);
     }
 
     private void handleGetUserRatings(HttpExchange exchange, String path) throws IOException {

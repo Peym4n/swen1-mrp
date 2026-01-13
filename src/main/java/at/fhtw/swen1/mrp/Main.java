@@ -6,10 +6,12 @@ import at.fhtw.swen1.mrp.handler.UserHandler;
 import at.fhtw.swen1.mrp.repository.MediaRepository;
 import at.fhtw.swen1.mrp.repository.UserRepository;
 import at.fhtw.swen1.mrp.service.MediaService;
+import at.fhtw.swen1.mrp.service.RatingService;
 import at.fhtw.swen1.mrp.service.UserService;
 import at.fhtw.swen1.mrp.handler.RatingHandler;
 import at.fhtw.swen1.mrp.repository.RatingRepository;
-import at.fhtw.swen1.mrp.service.RatingService;
+import at.fhtw.swen1.mrp.repository.FavoriteRepository;
+import at.fhtw.swen1.mrp.service.FavoriteService;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -23,22 +25,23 @@ public class Main {
         int port = 8080;
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // Wiring
+        // Repositories
         UserRepository userRepository = new UserRepository();
-        UserService userService = new UserService(userRepository);
-        
-        // Rating
         RatingRepository ratingRepository = new RatingRepository();
+        MediaRepository mediaRepository = new MediaRepository();
+        FavoriteRepository favoriteRepository = new FavoriteRepository();
+
+        // Services
+        UserService userService = new UserService(userRepository);
         RatingService ratingService = new RatingService(ratingRepository);
+        MediaService mediaService = new MediaService(mediaRepository);
+        FavoriteService favoriteService = new FavoriteService(favoriteRepository, mediaRepository);
         
         // Handlers
-        UserHandler userHandler = new UserHandler(userService, ratingService);
+        UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService);
         RatingHandler ratingHandler = new RatingHandler(ratingService, userService);
-
-        MediaRepository mediaRepository = new MediaRepository();
-        MediaService mediaService = new MediaService(mediaRepository);
-        // Note: mediaHandler checks path for /rate and uses ratingService
-        MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService);
+        // Note: mediaHandler checks path for /rate and /favorite
+        MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService, favoriteService);
 
         // Contexts
         server.createContext("/api/users/register", userHandler);
