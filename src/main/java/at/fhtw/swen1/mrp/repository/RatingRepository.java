@@ -47,20 +47,125 @@ public class RatingRepository {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    ratings.add(new Rating.Builder()
-                        .id(rs.getInt("id"))
-                        .userId(rs.getInt("user_id"))
-                        .mediaId(rs.getInt("media_id"))
-                        .stars(rs.getInt("stars"))
-                        .comment(rs.getString("comment"))
-                        .isConfirmed(rs.getBoolean("is_confirmed"))
-                        .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
-                        .build());
+                    ratings.add(mapResultSetToRating(rs));
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find ratings", e);
         }
         return ratings;
+    }
+
+    public List<Rating> findByUserId(int userId) {
+        List<Rating> ratings = new ArrayList<>();
+        String sql = "SELECT * FROM ratings WHERE user_id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ratings.add(mapResultSetToRating(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find user ratings", e);
+        }
+        return ratings;
+    }
+
+    public void update(Rating rating) {
+        String sql = "UPDATE ratings SET stars = ?, comment = ? WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, rating.getStars());
+            stmt.setString(2, rating.getComment());
+            stmt.setInt(3, rating.getId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update rating", e);
+        }
+    }
+
+    public void delete(int ratingId) {
+        String sql = "DELETE FROM ratings WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, ratingId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete rating", e);
+        }
+    }
+
+    public boolean hasUserRatedMedia(int userId, int mediaId) {
+        String sql = "SELECT 1 FROM ratings WHERE user_id = ? AND media_id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setInt(2, mediaId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to check existing rating", e);
+        }
+    }
+
+    public java.util.Optional<Rating> findById(int id) {
+        String sql = "SELECT * FROM ratings WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return java.util.Optional.of(mapResultSetToRating(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find rating", e);
+        }
+        return java.util.Optional.empty();
+    }
+
+    public void confirmRating(int ratingId) {
+        String sql = "UPDATE ratings SET is_confirmed = TRUE WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, ratingId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to confirm rating", e);
+        }
+    }
+
+    public void addLike(int userId, int ratingId) {
+        String sql = "INSERT INTO rating_likes (user_id, rating_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setInt(2, ratingId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to like rating", e);
+        }
+    }
+
+    private Rating mapResultSetToRating(ResultSet rs) throws SQLException {
+        return new Rating.Builder()
+            .id(rs.getInt("id"))
+            .userId(rs.getInt("user_id"))
+            .mediaId(rs.getInt("media_id"))
+            .stars(rs.getInt("stars"))
+            .comment(rs.getString("comment"))
+            .isConfirmed(rs.getBoolean("is_confirmed"))
+            .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+            .build();
     }
 }
