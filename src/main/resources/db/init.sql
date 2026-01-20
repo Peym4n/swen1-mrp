@@ -40,14 +40,14 @@ CREATE TABLE IF NOT EXISTS ratings (
     media_id INT NOT NULL REFERENCES media(id) ON DELETE CASCADE,
     stars INT NOT NULL CHECK (stars BETWEEN 1 AND 5),
     comment TEXT,
-    is_confirmed BOOLEAN DEFAULT FALSE,               -- (Moderation flag)
+    is_confirmed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, media_id)
 );
 
 -- Rating Likes Table
 -- Tracks which users liked which ratings.
-CREATE TABLE rating_likes (
+CREATE TABLE IF NOT EXISTS rating_likes (
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     rating_id INT REFERENCES ratings(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -56,7 +56,7 @@ CREATE TABLE rating_likes (
 
 -- Favorites Table
 -- Tracks user favorite lists.
-CREATE TABLE favorites (
+CREATE TABLE IF NOT EXISTS favorites (
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
     media_id INT REFERENCES media(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
