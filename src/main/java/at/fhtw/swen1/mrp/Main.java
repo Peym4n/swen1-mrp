@@ -12,6 +12,9 @@ import at.fhtw.swen1.mrp.handler.RatingHandler;
 import at.fhtw.swen1.mrp.repository.RatingRepository;
 import at.fhtw.swen1.mrp.repository.FavoriteRepository;
 import at.fhtw.swen1.mrp.service.FavoriteService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -37,11 +40,16 @@ public class Main {
         MediaService mediaService = new MediaService(mediaRepository);
         FavoriteService favoriteService = new FavoriteService(favoriteRepository, mediaRepository);
         
+        // ObjectMapper Configuration
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
         // Handlers
-        UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService);
-        RatingHandler ratingHandler = new RatingHandler(ratingService, userService);
-        // Note: mediaHandler checks path for /rate and /favorite
-        MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService, favoriteService);
+        UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService, objectMapper);
+        RatingHandler ratingHandler = new RatingHandler(ratingService, userService, objectMapper);
+        // mediaHandler checks path for /rate and /favorite
+        MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService, favoriteService, objectMapper);
 
         // Contexts
         server.createContext("/api/users/register", userHandler);

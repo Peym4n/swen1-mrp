@@ -29,12 +29,12 @@ public class MediaHandler implements HttpHandler {
     private final FavoriteService favoriteService;
     private final ObjectMapper objectMapper;
 
-    public MediaHandler(MediaService mediaService, UserService userService, RatingService ratingService, FavoriteService favoriteService) {
+    public MediaHandler(MediaService mediaService, UserService userService, RatingService ratingService, FavoriteService favoriteService, ObjectMapper objectMapper) {
         this.mediaService = mediaService;
         this.userService = userService;
         this.ratingService = ratingService;
         this.favoriteService = favoriteService;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     @Override

@@ -23,15 +23,15 @@ public class UserHandler implements HttpHandler {
     private final FavoriteService favoriteService;
     private final ObjectMapper objectMapper;
 
-    public UserHandler(UserService userService, RatingService ratingService, FavoriteService favoriteService) {
+    public UserHandler(UserService userService, RatingService ratingService, FavoriteService favoriteService, ObjectMapper objectMapper) {
         this.userService = userService;
         this.ratingService = ratingService;
         this.favoriteService = favoriteService;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
     
-    public UserHandler(UserService userService) {
-        this(userService, null, null);
+    public UserHandler(UserService userService, ObjectMapper objectMapper) {
+        this(userService, null, null, objectMapper);
     }
 
     @Override

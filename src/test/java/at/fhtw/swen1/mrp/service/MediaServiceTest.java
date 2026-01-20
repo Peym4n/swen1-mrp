@@ -143,9 +143,7 @@ class MediaServiceTest {
         // Ensure the mock returns the existing media
         when(mediaRepository.findById(mediaId)).thenReturn(Optional.of(existing));
         
-        // Log to debug if needed (not possible here, but logic helps)
         // userId 10 != otherUser 99, so expected exception.
-        
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             mediaService.deleteMedia(mediaId, otherUser);
         });

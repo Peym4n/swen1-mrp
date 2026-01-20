@@ -8,7 +8,7 @@ import java.util.List;
 
 public class FavoriteService {
     private final FavoriteRepository favoriteRepository;
-    private final MediaRepository mediaRepository; // Strictly to check if media exists?
+    private final MediaRepository mediaRepository;
 
     public FavoriteService(FavoriteRepository favoriteRepository, MediaRepository mediaRepository) {
         this.favoriteRepository = favoriteRepository;
@@ -23,8 +23,6 @@ public class FavoriteService {
     }
 
     public void removeFavorite(int userId, int mediaId) {
-        // Idempotent? Or check existence? 
-        // Let's just remove.
         favoriteRepository.remove(userId, mediaId);
     }
 

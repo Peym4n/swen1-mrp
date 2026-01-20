@@ -19,10 +19,10 @@ public class RatingHandler implements HttpHandler {
     private final UserService userService;
     private final ObjectMapper objectMapper;
 
-    public RatingHandler(RatingService ratingService, UserService userService) {
+    public RatingHandler(RatingService ratingService, UserService userService, ObjectMapper objectMapper) {
         this.ratingService = ratingService;
         this.userService = userService;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     @Override
