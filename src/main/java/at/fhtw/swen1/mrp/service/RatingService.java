@@ -1,6 +1,7 @@
 package at.fhtw.swen1.mrp.service;
 
 import at.fhtw.swen1.mrp.model.Rating;
+import at.fhtw.swen1.mrp.repository.MediaRepository;
 import at.fhtw.swen1.mrp.repository.RatingRepository;
 
 import java.time.LocalDateTime;
@@ -9,9 +10,11 @@ import java.util.Optional;
 
 public class RatingService {
     private final RatingRepository ratingRepository;
+    private final MediaRepository mediaRepository; // Full qualified to avoid collision if any loop, or just import
 
-    public RatingService(RatingRepository ratingRepository) {
+    public RatingService(RatingRepository ratingRepository, MediaRepository mediaRepository) {
         this.ratingRepository = ratingRepository;
+        this.mediaRepository = mediaRepository;
     }
 
     public Rating rateMedia(int userId, int mediaId, int stars, String comment) {
@@ -35,6 +38,11 @@ public class RatingService {
                 .build();
 
         ratingRepository.save(rating);
+        
+        // Update Average
+        double newAverage = ratingRepository.calculateAverageRating(mediaId);
+        mediaRepository.updateAverageRating(mediaId, newAverage);
+        
         return rating;
     }
     
@@ -85,7 +93,16 @@ public class RatingService {
                 .build();
         
         ratingRepository.update(updatedRating);
+        
+        // Update Average
+        double newAverage = ratingRepository.calculateAverageRating(rating.getMediaId());
+        mediaRepository.updateAverageRating(rating.getMediaId(), newAverage);
+        
         return updatedRating;
+    }
+
+    public List<at.fhtw.swen1.mrp.dto.LeaderboardEntryDTO> getLeaderboard() {
+        return ratingRepository.getMostActiveUsers();
     }
 
     public void deleteRating(int userId, int ratingId) {
@@ -98,7 +115,12 @@ public class RatingService {
         if (rating.getUserId() != userId) {
             throw new IllegalArgumentException("User does not own this rating");
         }
-
+        
+        int mediaId = rating.getMediaId();
         ratingRepository.delete(ratingId);
+        
+        // Update Average
+        double newAverage = ratingRepository.calculateAverageRating(mediaId);
+        mediaRepository.updateAverageRating(mediaId, newAverage);
     }
 }

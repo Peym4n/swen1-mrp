@@ -1,6 +1,7 @@
 package at.fhtw.swen1.mrp.service;
 
 import at.fhtw.swen1.mrp.model.Rating;
+import at.fhtw.swen1.mrp.repository.MediaRepository;
 import at.fhtw.swen1.mrp.repository.RatingRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,9 @@ class RatingServiceTest {
 
     @Mock
     private RatingRepository ratingRepository;
+    
+    @Mock
+    private MediaRepository mediaRepository;
 
     @InjectMocks
     private RatingService ratingService;
@@ -30,8 +34,9 @@ class RatingServiceTest {
         int stars = 5;
         String comment = "Great!";
 
-        // Mock: No existing rating
         when(ratingRepository.hasUserRatedMedia(userId, mediaId)).thenReturn(false);
+        // Mock average calculation
+        when(ratingRepository.calculateAverageRating(mediaId)).thenReturn(5.0);
 
         Rating result = ratingService.rateMedia(userId, mediaId, stars, comment);
 
@@ -42,6 +47,7 @@ class RatingServiceTest {
         assertFalse(result.getIsConfirmed()); // Should be false by default
         
         verify(ratingRepository).save(any(Rating.class));
+        verify(mediaRepository).updateAverageRating(mediaId, 5.0);
     }
 
     @Test
@@ -63,7 +69,6 @@ class RatingServiceTest {
         int userId = 1;
         int mediaId = 10;
         
-        // Mock: Already rated
         when(ratingRepository.hasUserRatedMedia(userId, mediaId)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () -> {
@@ -95,15 +100,18 @@ class RatingServiceTest {
     void testUpdateRating_Success() {
         int userId = 1;
         int ratingId = 5;
-        Rating existing = new Rating.Builder().id(ratingId).userId(userId).stars(3).comment("Old").build();
+        int mediaId = 10;
+        Rating existing = new Rating.Builder().id(ratingId).userId(userId).mediaId(mediaId).stars(3).comment("Old").build();
         
         when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(existing));
+        when(ratingRepository.calculateAverageRating(mediaId)).thenReturn(4.0);
         
         Rating updated = ratingService.updateRating(userId, ratingId, 5, "New");
         
         assertEquals(5, updated.getStars());
         assertEquals("New", updated.getComment());
         verify(ratingRepository).update(any(Rating.class));
+        verify(mediaRepository).updateAverageRating(mediaId, 4.0);
     }
 
     @Test
@@ -124,13 +132,16 @@ class RatingServiceTest {
     void testDeleteRating_Success() {
         int userId = 1;
         int ratingId = 5;
-        Rating existing = new Rating.Builder().id(ratingId).userId(userId).build();
+        int mediaId = 10;
+        Rating existing = new Rating.Builder().id(ratingId).userId(userId).mediaId(mediaId).build();
         
         when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(existing));
+        when(ratingRepository.calculateAverageRating(mediaId)).thenReturn(0.0);
         
         ratingService.deleteRating(userId, ratingId);
         
         verify(ratingRepository).delete(ratingId);
+        verify(mediaRepository).updateAverageRating(mediaId, 0.0);
     }
 
     @Test

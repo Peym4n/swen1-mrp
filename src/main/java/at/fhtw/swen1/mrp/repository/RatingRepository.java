@@ -1,6 +1,7 @@
 package at.fhtw.swen1.mrp.repository;
 
 import at.fhtw.swen1.mrp.data.DatabaseManager;
+import at.fhtw.swen1.mrp.dto.LeaderboardEntryDTO;
 import at.fhtw.swen1.mrp.model.Rating;
 
 import java.sql.Connection;
@@ -16,6 +17,43 @@ public class RatingRepository {
 
     public RatingRepository() {
         this.databaseManager = DatabaseManager.getInstance();
+    }
+
+    public double calculateAverageRating(int mediaId) {
+        String sql = "SELECT AVG(stars) FROM ratings WHERE media_id = ?";
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, mediaId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble(1); // Returns 0.0 if NULL
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to calculate average rating", e);
+        }
+        return 0.0;
+    }
+
+    public List<at.fhtw.swen1.mrp.dto.LeaderboardEntryDTO> getMostActiveUsers() {
+        List<at.fhtw.swen1.mrp.dto.LeaderboardEntryDTO> leaderboard = new ArrayList<>();
+        String sql = "SELECT u.username, COUNT(r.id) as count FROM ratings r JOIN users u ON r.user_id = u.id GROUP BY u.username ORDER BY count DESC LIMIT 10";
+        
+        Connection conn = databaseManager.getConnection();
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                leaderboard.add(new LeaderboardEntryDTO(
+                    rs.getString("username"),
+                    rs.getInt("count")
+                ));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to get leaderboard", e);
+        }
+        return leaderboard;
     }
 
     public void save(Rating rating) {
