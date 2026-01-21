@@ -23,7 +23,6 @@ import java.net.InetSocketAddress;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        // Initialize DB
         DatabaseManager.getInstance();
 
         int port = 8080;
@@ -34,30 +33,25 @@ public class Main {
     public static HttpServer startServer(int port) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // Repositories
         UserRepository userRepository = new UserRepository();
         RatingRepository ratingRepository = new RatingRepository();
         MediaRepository mediaRepository = new MediaRepository();
         FavoriteRepository favoriteRepository = new FavoriteRepository();
 
-        // Services
         UserService userService = new UserService(userRepository, mediaRepository);
         RatingService ratingService = new RatingService(ratingRepository, mediaRepository);
         MediaService mediaService = new MediaService(mediaRepository);
         FavoriteService favoriteService = new FavoriteService(favoriteRepository, mediaRepository);
         
-        // ObjectMapper Configuration
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        // Handlers
         UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService, objectMapper);
         RatingHandler ratingHandler = new RatingHandler(ratingService, userService, objectMapper);
         MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService, favoriteService, objectMapper);
         LeaderboardHandler leaderboardHandler = new LeaderboardHandler(ratingService, objectMapper);
 
-        // Contexts
         server.createContext("/api/users/register", userHandler);
         server.createContext("/api/users/login", userHandler);
         server.createContext("/api/users", userHandler); 

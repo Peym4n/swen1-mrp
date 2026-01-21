@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public class RatingService {
     private final RatingRepository ratingRepository;
-    private final MediaRepository mediaRepository; // Full qualified to avoid collision if any loop, or just import
+    private final MediaRepository mediaRepository;
 
     public RatingService(RatingRepository ratingRepository, MediaRepository mediaRepository) {
         this.ratingRepository = ratingRepository;
@@ -23,7 +23,6 @@ public class RatingService {
             throw new IllegalArgumentException("Stars must be between 1 and 5");
         }
 
-        // Check if user already rated this media
         if (ratingRepository.hasUserRatedMedia(userId, mediaId)) {
             throw new IllegalStateException("User has already rated this media");
         }
@@ -39,7 +38,6 @@ public class RatingService {
 
         int ratingId = ratingRepository.save(rating);
         
-        // Rebuild with ID
         rating = new Rating.Builder()
                 .id(ratingId)
                 .userId(userId)
@@ -58,7 +56,6 @@ public class RatingService {
     }
     
     public void confirmRating(int ratingId) {
-        // Could add check if admin here, but for now just business logic
         if (ratingRepository.findById(ratingId).isEmpty()) {
             throw new IllegalArgumentException("Rating not found");
         }
@@ -70,7 +67,6 @@ public class RatingService {
     }
 
     public void likeRating(int userId, int ratingId) {
-        // Ensure rating exists
         if (ratingRepository.findById(ratingId).isEmpty()) {
             throw new IllegalArgumentException("Rating not found");
         }
@@ -92,7 +88,6 @@ public class RatingService {
             throw new IllegalArgumentException("User does not own this rating");
         }
 
-        // Create updated object
         Rating updatedRating = new Rating.Builder()
                 .id(rating.getId())
                 .userId(rating.getUserId())
@@ -105,7 +100,6 @@ public class RatingService {
         
         ratingRepository.update(updatedRating);
         
-        // Update Average
         double newAverage = ratingRepository.calculateAverageRating(rating.getMediaId());
         mediaRepository.updateAverageRating(rating.getMediaId(), newAverage);
         

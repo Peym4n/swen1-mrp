@@ -16,10 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -62,8 +60,7 @@ public class MRPIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-         // We do NOT reset DB before every test method here if we want to build up state 
-         // implementation (Phase 1 -> Phase 2).
+         // We do NOT reset DB before every test method here if we want to build up state
          // If we wanted independent tests, we would reset and recreate data.
          // Given the complexity (Leaderboard depends on ratings), we will run ordered tests 1..N 
          // on a single clean DB started at Test 1.
@@ -157,13 +154,12 @@ public class MRPIntegrationTest {
     @Test
     @Order(4)
     public void testLeaderboard() {
-        // Current Ratings:
-        // User 1: 1 rating
-        // User 2: 2 ratings (created 1, rated 1) -- Wait, create doesn't count as rating.
-        // User 2 rated Matrix (1)
-        // User 3 rated Matrix (1)
+        // Current Ratings (from previous tests):
+        // User 1: 1 rating (Inception)
+        // User 2: 1 rating (Matrix)
+        // User 3: 1 rating (Matrix)
         
-        // Let's make User 2 rate Godfather too so they are top
+        // Make User 2 rate Godfather to have the most ratings
         rateMedia(mediaIdGodfather, 3, "Ok", tokenUser2);
         
         // Now User 2 has 2 ratings. User 1 has 1. User 3 has 1.

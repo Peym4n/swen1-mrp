@@ -123,13 +123,10 @@ public class MediaRepository {
 
     public List<Media> findRecommendations(int userId) {
         // Recommend media based on:
-        // 1. User's favorite genre (fetched via subquery if possible, or just passed, but let's try SQL)
+        // 1. User's favorite genre (fetched via subquery)
         // 2. Genres of media the user rated highly (>= 4 stars)
         // 3. Exclude media already rated by user
         // 4. Order by average_rating
-        
-        // Note: For pure JDBC, we can do this in one query or multiple.
-        // Let's assume we can get favorite genre from users table.
         
         String sql = "SELECT m.*, string_agg(mg.genre, ',') as genres " +
                      "FROM media m " +
