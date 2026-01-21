@@ -37,7 +37,18 @@ public class RatingService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        ratingRepository.save(rating);
+        int ratingId = ratingRepository.save(rating);
+        
+        // Rebuild with ID
+        rating = new Rating.Builder()
+                .id(ratingId)
+                .userId(userId)
+                .mediaId(mediaId)
+                .stars(stars)
+                .comment(comment)
+                .isConfirmed(false)
+                .createdAt(rating.getCreatedAt())
+                .build();
         
         // Update Average
         double newAverage = ratingRepository.calculateAverageRating(mediaId);

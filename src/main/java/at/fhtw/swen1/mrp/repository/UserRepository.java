@@ -10,8 +10,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import static java.sql.Statement.RETURN_GENERATED_KEYS;
-
 public class UserRepository {
     private final DatabaseManager databaseManager;
 
@@ -23,7 +21,7 @@ public class UserRepository {
         String sql = "INSERT INTO users (username, password, email, favorite_genre) VALUES (?, ?, ?, ?)";
         Connection conn = databaseManager.getConnection();
         
-        try (PreparedStatement stmt = conn.prepareStatement(sql, RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());

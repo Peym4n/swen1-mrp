@@ -296,6 +296,287 @@ public class MRPIntegrationTest {
             .body("size()", equalTo(0));
     }
 
+    @Test
+    @Order(9)
+    public void testRatingUpdateAndDelete() {
+        // User 3 updates their rating of Matrix from 4 to 5 stars
+        // First, get the rating ID (we'll use user3's rating of Matrix)
+        // For simplicity, we'll create a new rating first
+        
+        // Create a rating we can update
+        int ratingId = rateMediaAndGetId(mediaIdGodfather, 2, "Initial comment", tokenUser3);
+        
+        // Update the rating
+        RatingDTO updateDTO = new RatingDTO();
+        updateDTO.setStars(5);
+        updateDTO.setComment("Updated to 5 stars!");
+        
+        given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + tokenUser3)
+            .body(updateDTO)
+        .when()
+            .put("/ratings/" + ratingId)
+        .then()
+            .statusCode(200);
+        
+        // Verify Godfather's average rating updated
+        // Previous: User2 gave 3, User3 gave 2 → avg was 2.5
+        // After update: User2 gave 3, User3 gave 5 → avg should be 4.0
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .get("/media/" + mediaIdGodfather)
+        .then()
+            .statusCode(200)
+            .body("averageRating", equalTo(4.0f));
+        
+        // Delete the rating
+        given()
+            .header("Authorization", "Bearer " + tokenUser3)
+        .when()
+            .delete("/ratings/" + ratingId)
+        .then()
+            .statusCode(204);
+        
+        // Verify average updated after delete (only User2's 3 stars remains)
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .get("/media/" + mediaIdGodfather)
+        .then()
+            .statusCode(200)
+            .body("averageRating", equalTo(3.0f));
+    }
+
+    @Test
+    @Order(10)
+    public void testDuplicateRatingPrevention() {
+        // User 1 already rated Inception (in test 3)
+        // Try to rate it again - should fail
+        RatingDTO dto = new RatingDTO();
+        dto.setStars(3);
+        dto.setComment("Duplicate attempt");
+        
+        given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + tokenUser1)
+            .body(dto)
+        .when()
+            .post("/media/" + mediaIdInception + "/rate")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @Order(11)
+    public void testRatingLikes() {
+        // Get a rating ID (User2 rated Matrix)
+        // Create a new rating to like
+        int ratingId = rateMediaAndGetId(mediaIdInception, 4, "Likeable comment", tokenUser3);
+        
+        // User 1 likes this rating
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .post("/ratings/" + ratingId + "/like")
+        .then()
+            .statusCode(200);
+        
+        // User 2 also likes it
+        given()
+            .header("Authorization", "Bearer " + tokenUser2)
+        .when()
+            .post("/ratings/" + ratingId + "/like")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(12)
+    public void testCommentModeration() {
+        // Create a rating with a comment
+        int ratingId = rateMediaAndGetId(mediaIdMatrix, 3, "Needs moderation", tokenUser1);
+        
+        // Confirm the rating (admin/moderator action)
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .post("/ratings/" + ratingId + "/confirm")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(13)
+    public void testMediaUpdate() {
+        // Update Matrix (created by User1)
+        MediaDTO updateDTO = new MediaDTO();
+        updateDTO.setTitle("The Matrix Reloaded");
+        updateDTO.setDescription("Updated description");
+        updateDTO.setMediaType("movie");
+        updateDTO.setReleaseYear(2003);
+        updateDTO.setAgeRestriction(16);
+        updateDTO.setGenres(Arrays.asList("sci-fi", "action"));
+        
+        given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + tokenUser1)
+            .body(updateDTO)
+        .when()
+            .put("/media/" + mediaIdMatrix)
+        .then()
+            .statusCode(200);
+        
+        // Verify update
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .get("/media/" + mediaIdMatrix)
+        .then()
+            .statusCode(200)
+            .body("title", equalTo("The Matrix Reloaded"))
+            .body("releaseYear", equalTo(2003));
+    }
+
+    @Test
+    @Order(14)
+    public void testOwnershipEnforcement() {
+        // User2 tries to update User1's media (Matrix)
+        MediaDTO updateDTO = new MediaDTO();
+        updateDTO.setTitle("Hacked Title");
+        updateDTO.setMediaType("movie");
+        updateDTO.setReleaseYear(1999);
+        updateDTO.setAgeRestriction(16);
+        updateDTO.setGenres(Arrays.asList("sci-fi"));
+        
+        given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + tokenUser2)
+            .body(updateDTO)
+        .when()
+            .put("/media/" + mediaIdMatrix)
+        .then()
+            .statusCode(400); // Service returns 400 for ownership violations
+        
+        // User2 tries to delete User1's media
+        given()
+            .header("Authorization", "Bearer " + tokenUser2)
+        .when()
+            .delete("/media/" + mediaIdMatrix)
+        .then()
+            .statusCode(400); // Service returns 400 for ownership violations
+    }
+
+    @Test
+    @Order(15)
+    public void testAdvancedFiltering() {
+        // Filter by title
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+            .queryParam("title", "god")
+        .when()
+            .get("/media")
+        .then()
+            .statusCode(200)
+            .body("size()", greaterThanOrEqualTo(1))
+            .body("title", hasItem(containsString("Godfather")));
+        
+        // Filter by mediaType
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+            .queryParam("mediaType", "movie")
+        .when()
+            .get("/media")
+        .then()
+            .statusCode(200)
+            .body("size()", greaterThanOrEqualTo(3));
+        
+        // Filter by ageRestriction
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+            .queryParam("ageRestriction", 12)
+        .when()
+            .get("/media")
+        .then()
+            .statusCode(200)
+            .body("title", hasItem("Inception"));
+        
+        // Filter by minRating (average >= 3.0)
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+            .queryParam("rating", 3.0)
+        .when()
+            .get("/media")
+        .then()
+            .statusCode(200);
+        
+        // Combined filters: sci-fi movies with age >= 16
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+            .queryParam("genre", "sci-fi")
+            .queryParam("ageRestriction", 16)
+        .when()
+            .get("/media")
+        .then()
+            .statusCode(200)
+            .body("title", hasItem(containsString("Matrix")));
+    }
+
+    @Test
+    @Order(16)
+    public void testErrorHandling() {
+        // Invalid login credentials
+        UserDTO invalidUser = new UserDTO();
+        invalidUser.setUsername("user1");
+        invalidUser.setPassword("wrongpassword");
+        
+        given()
+            .contentType(ContentType.JSON)
+            .body(invalidUser)
+        .when()
+            .post("/users/login")
+        .then()
+            .statusCode(anyOf(equalTo(400), equalTo(401)));
+        
+        // No auth token - media is public, should return 200
+        given()
+        .when()
+            .get("/media/" + mediaIdMatrix)
+        .then()
+            .statusCode(200);
+        
+        // Invalid rating (stars out of range)
+        RatingDTO invalidRating = new RatingDTO();
+        invalidRating.setStars(10); // Invalid
+        invalidRating.setComment("Invalid");
+        
+        given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + tokenUser1)
+            .body(invalidRating)
+        .when()
+            .post("/media/" + mediaIdMatrix + "/rate")
+        .then()
+            .statusCode(400);
+        
+        // Non-existent media ID
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .get("/media/99999")
+        .then()
+            .statusCode(404);
+        
+        // Non-existent user profile
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .get("/users/99999/profile")
+        .then()
+            .statusCode(404);
+    }
+
 
     /// HELPERS ///
 
@@ -356,5 +637,21 @@ public class MRPIntegrationTest {
             .post("/media/" + mediaId + "/rate")
         .then()
             .statusCode(201);
+    }
+    
+    private int rateMediaAndGetId(int mediaId, int stars, String comment, String token) {
+        RatingDTO dto = new RatingDTO();
+        dto.setStars(stars);
+        dto.setComment(comment);
+        
+        return given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + token)
+            .body(dto)
+        .when()
+            .post("/media/" + mediaId + "/rate")
+        .then()
+            .statusCode(201)
+            .extract().path("id");
     }
 }

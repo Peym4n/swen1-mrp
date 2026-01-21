@@ -56,10 +56,10 @@ public class RatingRepository {
         return leaderboard;
     }
 
-    public void save(Rating rating) {
+    public int save(Rating rating) {
         String sql = "INSERT INTO ratings (user_id, media_id, stars, comment, is_confirmed) VALUES (?, ?, ?, ?, ?)";
         Connection conn = databaseManager.getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             
             stmt.setInt(1, rating.getUserId());
             stmt.setInt(2, rating.getMediaId());
@@ -68,6 +68,14 @@ public class RatingRepository {
             stmt.setBoolean(5, rating.getIsConfirmed() != null ? rating.getIsConfirmed() : false);
             
             stmt.executeUpdate();
+            
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                } else {
+                    throw new SQLException("Creating rating failed, no ID obtained.");
+                }
+            }
             
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save rating", e);
