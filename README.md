@@ -1,64 +1,59 @@
 # Media Ratings Platform (MRP)
 
-A pure Java REST API for managing media ratings, users, and genres. Built without frameworks (Spring/Hibernate) using standard libraries and JDBC.
+A pure Java REST API for managing media ratings, users, and genres. Built without frameworks (Spring/Hibernate) to demonstrate deep understanding of core Java libraries, JDBC, and architecture patterns.
 
-## Technician Stack
+## 🚀 Features
+- **User Management**: Registration, Login (Token-based Auth), Profile Management.
+- **Media Management**: Create, Edit, Delete (Owner restricted), Filter, and Search.
+- **Ratings & Reviews**: 
+  - 1-5 Star Ratings with Comments.
+  - **Moderation**: Comments require confirmation.
+  - **One Rating Rule**: 1 rating per user per media.
+  - **Likes**: Users can like helpful ratings.
+- **Engagement**:
+  - **Favorites**: Users can mark media as favorites.
+  - **Leaderboard**: Track most active users.
+  - **Recommendations**: Personalized suggestions based on rating history and genre similarity.
+
+## 🛠️ Tech Stack
 - **Language**: Java 21+
 - **Database**: PostgreSQL (via Docker)
-- **Server**: `com.sun.net.httpserver`
-- **Architecture**: Layered (Handler -> Service -> Repository -> Database)
+- **Server**: `com.sun.net.httpserver` (No Frameworks)
+- **Persistence**: Pure JDBC with `PreparedStatement` & Singleton `DatabaseManager`.
+- **Architecture**: 
+  - Resource Router Pattern (`UserRouter`, `MediaRouter`...) -> Granular Handlers.
+  - Layered: Handler -> Service -> Repository -> Database.
 
-## Prerequisites
-- Java 21+ SDK
-- Docker & Docker Compose
-- Maven
+## 📚 Documentation
+- [Project Protocol](protocol.md): Design decisions, lessons learned, time tracking.
+- [Class Diagram](class_diagram.md): Visual representation of the architecture.
 
-## Setup & Run
+## ⚙️ Setup & Run
 
-1.  **Start Database**
-    ```bash
-    docker-compose up -d
-    ```
-
-2.  **Build & Run Application**
-    ```bash
-    mvn clean package
-    java -jar target/swen1-mrp-1.0-SNAPSHOT.jar
-    ```
-    Server starts on `http://localhost:8080`.
-
-## API Usage Examples
-
-**1. Register User**
+### 1. Start Database
 ```bash
-curl -X POST http://localhost:8080/api/users/register \
-  -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "password": "password123"}'
+docker-compose up -d
+```
+*Ensures PostgreSQL is running on port 5432.*
+
+### 2. Build & Run Application
+```bash
+mvn clean package
+java -jar target/swen1-mrp-1.0-SNAPSHOT.jar
+```
+Server starts on `http://localhost:8080`.
+
+## 🧪 Testing
+
+### Unit Tests
+Run the JUnit 5 test suite (mocks repositories):
+```bash
+mvn test
 ```
 
-**2. Login (Get Token)**
+### Integration Tests
+Run the full stack integration tests (Rest-Assured):
 ```bash
-curl -X POST http://localhost:8080/api/users/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "password": "password123"}'
+mvn test -Dtest=MRPIntegrationTest
 ```
-*Returns: `{"token": "mrp-token-..."}`*
-
-**3. Create Media (Requires Auth)**
-```bash
-curl -X POST http://localhost:8080/api/media \
-  -H "Authorization: Bearer mrp-token-..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Inception",
-    "mediaType": "movie",
-    "releaseYear": 2010,
-    "ageRestriction": 13,
-    "genres": ["Sci-Fi", "Action"]
-  }'
-```
-
-**4. List Media**
-```bash
-curl -X GET "http://localhost:8080/api/media?title=Inception"
-```
+*Note: Integration tests automatically reset the test database.*
