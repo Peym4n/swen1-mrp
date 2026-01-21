@@ -6,8 +6,8 @@ import at.fhtw.swen1.mrp.model.User;
 import at.fhtw.swen1.mrp.service.FavoriteService;
 import at.fhtw.swen1.mrp.service.RatingService;
 import at.fhtw.swen1.mrp.service.UserService;
-import at.fhtw.swen1.mrp.service.RecommendationService;
 import at.fhtw.swen1.mrp.dto.UserDTO;
+import at.fhtw.swen1.mrp.dto.UserProfileDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -22,19 +22,17 @@ public class UserHandler implements HttpHandler {
     private final UserService userService;
     private final RatingService ratingService;
     private final FavoriteService favoriteService;
-    private final RecommendationService recommendationService;
     private final ObjectMapper objectMapper;
 
-    public UserHandler(UserService userService, RatingService ratingService, FavoriteService favoriteService, RecommendationService recommendationService, ObjectMapper objectMapper) {
+    public UserHandler(UserService userService, RatingService ratingService, FavoriteService favoriteService, ObjectMapper objectMapper) {
         this.userService = userService;
         this.ratingService = ratingService;
         this.favoriteService = favoriteService;
-        this.recommendationService = recommendationService;
         this.objectMapper = objectMapper;
     }
     
     public UserHandler(UserService userService, ObjectMapper objectMapper) {
-        this(userService, null, null, null, objectMapper);
+        this(userService, null, null, objectMapper);
     }
 
     @Override
@@ -49,6 +47,8 @@ public class UserHandler implements HttpHandler {
                 handleLogin(exchange);
             } else if (path.matches("^/api/users/\\d+/ratings$") && "GET".equalsIgnoreCase(method)) {
                 handleGetUserRatings(exchange, path);
+            } else if (path.matches("^/api/users/\\d+/profile$") && "GET".equalsIgnoreCase(method)) {
+                handleGetProfile(exchange, path);
             } else if (path.matches("^/api/users/\\d+/profile$") && "PUT".equalsIgnoreCase(method)) {
                 handleUpdateProfile(exchange, path);
             } else if (path.matches("^/api/users/\\d+/favorites$") && "GET".equalsIgnoreCase(method)) {
@@ -80,12 +80,21 @@ public class UserHandler implements HttpHandler {
         sendResponse(exchange, 200, response);
     }
 
-    private void handleGetRecommendations(HttpExchange exchange, String path) throws IOException {
-        if (recommendationService == null) {
-            sendResponse(exchange, 500, "{\"error\": \"RecommendationService not initialized\"}");
-            return;
-        }
+    private void handleGetProfile(HttpExchange exchange, String path) throws IOException {
+        // /api/users/{id}/profile
+        String[] parts = path.split("/");
+        int userId = Integer.parseInt(parts[3]);
 
+        try {
+            UserProfileDTO profile = userService.getUserProfile(userId);
+            String response = objectMapper.writeValueAsString(profile);
+            sendResponse(exchange, 200, response);
+        } catch (IllegalArgumentException e) {
+            sendResponse(exchange, 404, "{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    private void handleGetRecommendations(HttpExchange exchange, String path) throws IOException {
         User user = authenticate(exchange);
         if (user == null) return;
 
@@ -98,9 +107,13 @@ public class UserHandler implements HttpHandler {
              return;
         }
         
-        List<Media> recommendations = recommendationService.getRecommendations(pathUserId);
-        String response = objectMapper.writeValueAsString(recommendations);
-        sendResponse(exchange, 200, response);
+        try {
+            List<Media> recommendations = userService.getRecommendations(pathUserId);
+            String response = objectMapper.writeValueAsString(recommendations);
+            sendResponse(exchange, 200, response);
+        } catch (IllegalStateException e) {
+            sendResponse(exchange, 500, "{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
 
     private void handleGetUserRatings(HttpExchange exchange, String path) throws IOException {

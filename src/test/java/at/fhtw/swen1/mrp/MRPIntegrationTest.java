@@ -197,6 +197,36 @@ public class MRPIntegrationTest {
     
     @Test
     @Order(6)
+    public void testGetUserProfile() {
+        // User 1 has rated 1 movie (Inception) with 5 stars
+        // Should return: totalRatings=1, averageScore=5.0
+        given()
+            .header("Authorization", "Bearer " + tokenUser1)
+        .when()
+            .get("/users/" + user1Id + "/profile")
+        .then()
+            .statusCode(200)
+            .body("id", equalTo(user1Id))
+            .body("username", equalTo("user1"))
+            .body("email", equalTo("u1@test.com"))
+            .body("favoriteGenre", equalTo("sci-fi"))
+            .body("totalRatings", equalTo(1))
+            .body("averageScore", equalTo(5.0f));
+            
+        // User 2 has rated 2 movies (Matrix: 5, Godfather: 3) = avg 4.0
+        given()
+            .header("Authorization", "Bearer " + tokenUser2)
+        .when()
+            .get("/users/" + user2Id + "/profile")
+        .then()
+            .statusCode(200)
+            .body("username", equalTo("user2"))
+            .body("totalRatings", equalTo(2))
+            .body("averageScore", equalTo(4.0f));
+    }
+    
+    @Test
+    @Order(7)
     public void testRecommendations() {
         // Recommendations for User 1 (Fav Genre: sci-fi)
         // User 1 rated Inception (sci-fi).
@@ -228,7 +258,7 @@ public class MRPIntegrationTest {
     }
     
     @Test
-    @Order(7)
+    @Order(8)
     public void testFavorites() {
         // User 1 favorites Godfather
         given()

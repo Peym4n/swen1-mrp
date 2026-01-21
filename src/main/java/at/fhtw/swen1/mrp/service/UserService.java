@@ -1,10 +1,14 @@
 package at.fhtw.swen1.mrp.service;
 
 import at.fhtw.swen1.mrp.model.User;
+import at.fhtw.swen1.mrp.model.Media;
 import at.fhtw.swen1.mrp.repository.UserRepository;
+import at.fhtw.swen1.mrp.repository.MediaRepository;
+import at.fhtw.swen1.mrp.dto.UserProfileDTO;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -13,9 +17,16 @@ import java.math.BigInteger;
 
 public class UserService {
     private final UserRepository userRepository;
+    private final MediaRepository mediaRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, MediaRepository mediaRepository) {
         this.userRepository = userRepository;
+        this.mediaRepository = mediaRepository;
+    }
+    
+    // Constructor for tests that don't need mediaRepository
+    public UserService(UserRepository userRepository) {
+        this(userRepository, null);
     }
 
     public User register(User user) {
@@ -89,4 +100,20 @@ public class UserService {
         
         return user;
     }
+
+    public UserProfileDTO getUserProfile(int userId) {
+        UserProfileDTO profile = userRepository.getProfileWithStats(userId);
+        if (profile == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+        return profile;
+    }
+
+    public List<Media> getRecommendations(int userId) {
+        if (mediaRepository == null) {
+            throw new IllegalStateException("MediaRepository not initialized");
+        }
+        return mediaRepository.findRecommendations(userId);
+    }
 }
+

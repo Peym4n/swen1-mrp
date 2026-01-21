@@ -12,7 +12,6 @@ import at.fhtw.swen1.mrp.handler.RatingHandler;
 import at.fhtw.swen1.mrp.repository.RatingRepository;
 import at.fhtw.swen1.mrp.repository.FavoriteRepository;
 import at.fhtw.swen1.mrp.service.FavoriteService;
-import at.fhtw.swen1.mrp.service.RecommendationService;
 import at.fhtw.swen1.mrp.handler.LeaderboardHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -42,11 +41,10 @@ public class Main {
         FavoriteRepository favoriteRepository = new FavoriteRepository();
 
         // Services
-        UserService userService = new UserService(userRepository);
+        UserService userService = new UserService(userRepository, mediaRepository);
         RatingService ratingService = new RatingService(ratingRepository, mediaRepository);
         MediaService mediaService = new MediaService(mediaRepository);
         FavoriteService favoriteService = new FavoriteService(favoriteRepository, mediaRepository);
-        RecommendationService recommendationService = new RecommendationService(mediaRepository);
         
         // ObjectMapper Configuration
         ObjectMapper objectMapper = new ObjectMapper();
@@ -54,7 +52,7 @@ public class Main {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         // Handlers
-        UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService, recommendationService, objectMapper);
+        UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService, objectMapper);
         RatingHandler ratingHandler = new RatingHandler(ratingService, userService, objectMapper);
         MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService, favoriteService, objectMapper);
         LeaderboardHandler leaderboardHandler = new LeaderboardHandler(ratingService, objectMapper);

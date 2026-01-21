@@ -2,12 +2,15 @@ package at.fhtw.swen1.mrp.repository;
 
 import at.fhtw.swen1.mrp.data.DatabaseManager;
 import at.fhtw.swen1.mrp.model.User;
+import at.fhtw.swen1.mrp.dto.UserProfileDTO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
+
+import static java.sql.Statement.RETURN_GENERATED_KEYS;
 
 public class UserRepository {
     private final DatabaseManager databaseManager;
@@ -120,4 +123,38 @@ public class UserRepository {
             throw new RuntimeException("Failed to update user", e);
         }
     }
+
+    public UserProfileDTO getProfileWithStats(int userId) {
+        String sql = "SELECT u.id, u.username, u.email, u.favorite_genre, " +
+                     "COUNT(r.id) as total_ratings, " +
+                     "COALESCE(AVG(r.stars), 0) as avg_score " +
+                     "FROM users u " +
+                     "LEFT JOIN ratings r ON u.id = r.user_id " +
+                     "WHERE u.id = ? " +
+                     "GROUP BY u.id, u.username, u.email, u.favorite_genre";
+        
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    UserProfileDTO profile = new UserProfileDTO();
+                    profile.setId(rs.getInt("id"));
+                    profile.setUsername(rs.getString("username"));
+                    profile.setEmail(rs.getString("email"));
+                    profile.setFavoriteGenre(rs.getString("favorite_genre"));
+                    profile.setTotalRatings(rs.getInt("total_ratings"));
+                    profile.setAverageScore(rs.getDouble("avg_score"));
+                    return profile;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to get profile with stats", e);
+        }
+        
+        return null;
+    }
 }
+
