@@ -35,6 +35,15 @@ public class DatabaseManager {
         return connection;
     }
 
+    public void resetDatabase() {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("DROP TABLE IF EXISTS favorites, rating_likes, ratings, media_genres, media, users CASCADE");
+            initializeDatabase();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to reset database", e);
+        }
+    }
+
     private void initializeDatabase() {
         try {
             String initScript = readInitScript();

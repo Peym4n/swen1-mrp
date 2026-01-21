@@ -18,7 +18,7 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public void register(User user) {
+    public User register(User user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new RuntimeException("User already exists");
         }
@@ -26,8 +26,10 @@ public class UserService {
         String hashedPassword = hashPassword(user.getPassword());
         
         user.setPassword(hashedPassword);
-                
+        
         userRepository.save(user);
+        
+        return user;
     }
 
     public String login(String username, String password) {

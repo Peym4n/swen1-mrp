@@ -6,6 +6,7 @@ import at.fhtw.swen1.mrp.model.User;
 import at.fhtw.swen1.mrp.service.FavoriteService;
 import at.fhtw.swen1.mrp.service.RatingService;
 import at.fhtw.swen1.mrp.service.UserService;
+import at.fhtw.swen1.mrp.service.RecommendationService;
 import at.fhtw.swen1.mrp.dto.UserDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
@@ -21,17 +22,19 @@ public class UserHandler implements HttpHandler {
     private final UserService userService;
     private final RatingService ratingService;
     private final FavoriteService favoriteService;
+    private final RecommendationService recommendationService;
     private final ObjectMapper objectMapper;
 
-    public UserHandler(UserService userService, RatingService ratingService, FavoriteService favoriteService, ObjectMapper objectMapper) {
+    public UserHandler(UserService userService, RatingService ratingService, FavoriteService favoriteService, RecommendationService recommendationService, ObjectMapper objectMapper) {
         this.userService = userService;
         this.ratingService = ratingService;
         this.favoriteService = favoriteService;
+        this.recommendationService = recommendationService;
         this.objectMapper = objectMapper;
     }
     
     public UserHandler(UserService userService, ObjectMapper objectMapper) {
-        this(userService, null, null, objectMapper);
+        this(userService, null, null, null, objectMapper);
     }
 
     @Override
@@ -50,6 +53,8 @@ public class UserHandler implements HttpHandler {
                 handleUpdateProfile(exchange, path);
             } else if (path.matches("^/api/users/\\d+/favorites$") && "GET".equalsIgnoreCase(method)) {
                 handleGetFavorites(exchange, path);
+            } else if (path.matches("^/api/users/\\d+/recommendations$") && "GET".equalsIgnoreCase(method)) {
+                handleGetRecommendations(exchange, path);
             } else {
                 sendResponse(exchange, 404, "{\"error\": \"Not Found\"}");
             }
@@ -72,6 +77,29 @@ public class UserHandler implements HttpHandler {
         // List<Media>
         List<Media> favorites = favoriteService.getFavorites(userId);
         String response = objectMapper.writeValueAsString(favorites);
+        sendResponse(exchange, 200, response);
+    }
+
+    private void handleGetRecommendations(HttpExchange exchange, String path) throws IOException {
+        if (recommendationService == null) {
+            sendResponse(exchange, 500, "{\"error\": \"RecommendationService not initialized\"}");
+            return;
+        }
+
+        User user = authenticate(exchange);
+        if (user == null) return;
+
+        // /api/users/{id}/recommendations
+        String[] parts = path.split("/");
+        int pathUserId = Integer.parseInt(parts[3]);
+
+        if (user.getId() != pathUserId) {
+             sendResponse(exchange, 403, "{\"error\": \"Forbidden\"}");
+             return;
+        }
+        
+        List<Media> recommendations = recommendationService.getRecommendations(pathUserId);
+        String response = objectMapper.writeValueAsString(recommendations);
         sendResponse(exchange, 200, response);
     }
 
@@ -135,8 +163,8 @@ public class UserHandler implements HttpHandler {
                 .favoriteGenre(dto.getFavoriteGenre())
                 .build();
 
-        userService.register(user);
-        sendResponse(exchange, 201, "{\"message\": \"User registered\"}");
+        User createdUser = userService.register(user);
+        sendResponse(exchange, 201, "{\"message\": \"User registered\", \"id\": " + createdUser.getId() + "}");
     }
 
     private void handleLogin(HttpExchange exchange) throws IOException {

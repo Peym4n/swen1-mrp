@@ -12,6 +12,8 @@ import at.fhtw.swen1.mrp.handler.RatingHandler;
 import at.fhtw.swen1.mrp.repository.RatingRepository;
 import at.fhtw.swen1.mrp.repository.FavoriteRepository;
 import at.fhtw.swen1.mrp.service.FavoriteService;
+import at.fhtw.swen1.mrp.service.RecommendationService;
+import at.fhtw.swen1.mrp.handler.LeaderboardHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -26,6 +28,11 @@ public class Main {
         DatabaseManager.getInstance();
 
         int port = 8080;
+        startServer(port);
+        System.out.println("Server started on port " + port);
+    }
+
+    public static HttpServer startServer(int port) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         // Repositories
@@ -36,9 +43,10 @@ public class Main {
 
         // Services
         UserService userService = new UserService(userRepository);
-        RatingService ratingService = new RatingService(ratingRepository);
+        RatingService ratingService = new RatingService(ratingRepository, mediaRepository);
         MediaService mediaService = new MediaService(mediaRepository);
         FavoriteService favoriteService = new FavoriteService(favoriteRepository, mediaRepository);
+        RecommendationService recommendationService = new RecommendationService(mediaRepository);
         
         // ObjectMapper Configuration
         ObjectMapper objectMapper = new ObjectMapper();
@@ -46,19 +54,22 @@ public class Main {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         // Handlers
-        UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService, objectMapper);
+        UserHandler userHandler = new UserHandler(userService, ratingService, favoriteService, recommendationService, objectMapper);
         RatingHandler ratingHandler = new RatingHandler(ratingService, userService, objectMapper);
-        // mediaHandler checks path for /rate and /favorite
         MediaHandler mediaHandler = new MediaHandler(mediaService, userService, ratingService, favoriteService, objectMapper);
+        LeaderboardHandler leaderboardHandler = new LeaderboardHandler(ratingService, objectMapper);
 
         // Contexts
         server.createContext("/api/users/register", userHandler);
         server.createContext("/api/users/login", userHandler);
+        server.createContext("/api/users", userHandler); 
+        
         server.createContext("/api/media", mediaHandler);
         server.createContext("/api/ratings", ratingHandler);
+        server.createContext("/api/leaderboard", leaderboardHandler);
 
         server.setExecutor(null);
         server.start();
-        System.out.println("Server started on port " + port);
+        return server;
     }
 }

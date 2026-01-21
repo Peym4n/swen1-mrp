@@ -20,7 +20,7 @@ public class UserRepository {
         String sql = "INSERT INTO users (username, password, email, favorite_genre) VALUES (?, ?, ?, ?)";
         Connection conn = databaseManager.getConnection();
         
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, RETURN_GENERATED_KEYS)) {
             
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());
@@ -28,6 +28,12 @@ public class UserRepository {
             stmt.setString(4, user.getFavoriteGenre());
             
             stmt.executeUpdate();
+            
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    user.setId(generatedKeys.getInt(1));
+                }
+            }
             
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save user", e);
