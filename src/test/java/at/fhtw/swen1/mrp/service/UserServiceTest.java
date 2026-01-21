@@ -18,12 +18,15 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private at.fhtw.swen1.mrp.repository.MediaRepository mediaRepository;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        userService = new UserService(userRepository);
+        userService = new UserService(userRepository, mediaRepository);
     }
 
     @Test
@@ -94,5 +97,72 @@ class UserServiceTest {
         when(userRepository.getProfileWithStats(userId)).thenReturn(null);
         
         assertThrows(IllegalArgumentException.class, () -> userService.getUserProfile(userId));
+    }
+
+    @Test
+    void testLogin_Success() {
+        String username = "testuser";
+        String password = "password";
+        // SHA-256 of "password"
+        String hashedPassword = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";
+        
+        User user = new User.Builder()
+                .id(1)
+                .username(username)
+                .password(hashedPassword)
+                .build();
+        
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+        
+        String token = userService.login(username, password);
+        
+        assertNotNull(token);
+        assertTrue(token.startsWith("mrp-token-"));
+        
+        verify(userRepository).updateToken(eq(1), anyString());
+    }
+
+    @Test
+    void testLogin_InvalidCredentials() {
+        String username = "testuser";
+        String password = "password";
+        // SHA-256 of "password"
+        String hashedPassword = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";
+        
+        User user = new User.Builder()
+                .id(1)
+                .username(username)
+                .password(hashedPassword)
+                .build();
+        
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+        
+        // Try to login with wrong password
+        assertThrows(RuntimeException.class, () -> userService.login(username, "wrongpass"));
+        verify(userRepository, never()).updateToken(anyInt(), any());
+    }
+
+    @Test
+    void testGetUserByToken_Success() {
+        String token = "Bearer mrp-token-123";
+        String cleanToken = "mrp-token-123";
+        User user = new User.Builder().username("test").build();
+        
+        when(userRepository.findByToken(cleanToken)).thenReturn(Optional.of(user));
+        
+        Optional<User> result = userService.getUserByToken(token);
+        
+        assertTrue(result.isPresent());
+        assertEquals("test", result.get().getUsername());
+    }
+
+    @Test
+    void testGetUserByToken_InvalidFormat() {
+        String token = "InvalidFormat";
+        
+        Optional<User> result = userService.getUserByToken(token);
+        
+        assertTrue(result.isEmpty());
+        verify(userRepository, never()).findByToken(anyString());
     }
 }

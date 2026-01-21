@@ -156,4 +156,40 @@ class RatingServiceTest {
             ratingService.deleteRating(userId, ratingId);
         });
     }
+
+    @Test
+    void testLikeRating_Success() {
+        int userId = 1;
+        int ratingId = 5;
+        
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(new Rating.Builder().build()));
+        
+        ratingService.likeRating(userId, ratingId);
+        
+        verify(ratingRepository).addLike(userId, ratingId);
+    }
+    
+    @Test
+    void testLikeRating_NotFound() {
+        int userId = 1;
+        int ratingId = 99;
+        
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.empty());
+        
+        assertThrows(IllegalArgumentException.class, () -> ratingService.likeRating(userId, ratingId));
+        verify(ratingRepository, never()).addLike(anyInt(), anyInt());
+    }
+
+    @Test
+    void testGetLeaderboard() {
+        ratingService.getLeaderboard();
+        verify(ratingRepository).getMostActiveUsers();
+    }
+
+    @Test
+    void testGetUserRatings() {
+        int userId = 1;
+        ratingService.getUserRatings(userId);
+        verify(ratingRepository).findByUserId(userId);
+    }
 }
