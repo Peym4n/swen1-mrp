@@ -79,20 +79,47 @@ class RatingServiceTest {
     @Test
     void testConfirmRating_Success() {
         int ratingId = 5;
-        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(new Rating.Builder().build()));
+        int userId = 10;
+        int mediaId = 20;
         
-        ratingService.confirmRating(ratingId);
+        Rating rating = new Rating.Builder().id(ratingId).mediaId(mediaId).build();
+        at.fhtw.swen1.mrp.model.Media media = new at.fhtw.swen1.mrp.model.Media.Builder().id(mediaId).creatorId(userId).build();
+
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(rating));
+        when(mediaRepository.findById(mediaId)).thenReturn(Optional.of(media));
+        
+        ratingService.confirmRating(ratingId, userId);
         
         verify(ratingRepository).confirmRating(ratingId);
     }
     
+    @Test
+    void testConfirmRating_Unauthorized() {
+        int ratingId = 5;
+        int userId = 10;
+        int ownerId = 99;
+        int mediaId = 20;
+
+        Rating rating = new Rating.Builder().id(ratingId).mediaId(mediaId).build();
+        at.fhtw.swen1.mrp.model.Media media = new at.fhtw.swen1.mrp.model.Media.Builder().id(mediaId).creatorId(ownerId).build();
+
+        when(ratingRepository.findById(ratingId)).thenReturn(Optional.of(rating));
+        when(mediaRepository.findById(mediaId)).thenReturn(Optional.of(media));
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            ratingService.confirmRating(ratingId, userId);
+        });
+        
+        verify(ratingRepository, never()).confirmRating(anyInt());
+    }
+
     @Test
     void testConfirmRating_NotFound() {
         int ratingId = 99;
         when(ratingRepository.findById(ratingId)).thenReturn(Optional.empty());
         
         assertThrows(IllegalArgumentException.class, () -> {
-            ratingService.confirmRating(ratingId);
+            ratingService.confirmRating(ratingId, 1);
         });
     }
 

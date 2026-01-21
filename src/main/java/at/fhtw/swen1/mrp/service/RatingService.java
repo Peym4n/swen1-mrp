@@ -1,5 +1,6 @@
 package at.fhtw.swen1.mrp.service;
 
+import at.fhtw.swen1.mrp.model.Media;
 import at.fhtw.swen1.mrp.model.Rating;
 import at.fhtw.swen1.mrp.repository.MediaRepository;
 import at.fhtw.swen1.mrp.repository.RatingRepository;
@@ -38,6 +39,7 @@ public class RatingService {
 
         int ratingId = ratingRepository.save(rating);
         
+        // Rebuild with ID
         rating = new Rating.Builder()
                 .id(ratingId)
                 .userId(userId)
@@ -55,10 +57,24 @@ public class RatingService {
         return rating;
     }
     
-    public void confirmRating(int ratingId) {
-        if (ratingRepository.findById(ratingId).isEmpty()) {
+    public void confirmRating(int ratingId, int userId) {
+        Optional<Rating> ratingOpt = ratingRepository.findById(ratingId);
+        if (ratingOpt.isEmpty()) {
             throw new IllegalArgumentException("Rating not found");
         }
+        
+        Rating rating = ratingOpt.get();
+        Optional<Media> mediaOpt = mediaRepository.findById(rating.getMediaId());
+        
+        if (mediaOpt.isEmpty()) {
+            throw new IllegalArgumentException("Associated media not found");
+        }
+        
+        Media media = mediaOpt.get();
+        if (media.getCreatorId() != userId) {
+            throw new IllegalArgumentException("User is not the owner of this media");
+        }
+        
         ratingRepository.confirmRating(ratingId);
     }
     
@@ -100,6 +116,7 @@ public class RatingService {
         
         ratingRepository.update(updatedRating);
         
+        // Update Average
         double newAverage = ratingRepository.calculateAverageRating(rating.getMediaId());
         mediaRepository.updateAverageRating(rating.getMediaId(), newAverage);
         

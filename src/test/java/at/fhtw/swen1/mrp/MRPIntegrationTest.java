@@ -18,7 +18,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.io.IOException;
 import java.util.Arrays;
 
-
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
