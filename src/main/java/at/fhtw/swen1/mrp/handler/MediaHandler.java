@@ -218,10 +218,12 @@ public class MediaHandler implements HttpHandler {
 
         String title = params.get("title");
         String mediaType = params.get("mediaType");
+        String genre = params.get("genre");
         Integer releaseYear = params.containsKey("releaseYear") ? Integer.parseInt(params.get("releaseYear")) : null;
         Integer ageRestriction = params.containsKey("ageRestriction") ? Integer.parseInt(params.get("ageRestriction")) : null;
+        Double minRating = params.containsKey("rating") ? Double.parseDouble(params.get("rating")) : null; // "rating" from query usually implies min rating
 
-        List<Media> mediaList = mediaService.getMedia(title, mediaType, releaseYear, ageRestriction);
+        List<Media> mediaList = mediaService.getMedia(title, mediaType, releaseYear, ageRestriction, genre, minRating);
         
         String response = objectMapper.writeValueAsString(mediaList);
         sendResponse(exchange, 200, response);

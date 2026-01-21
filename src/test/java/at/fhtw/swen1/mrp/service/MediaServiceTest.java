@@ -46,9 +46,9 @@ class MediaServiceTest {
     @Test
     void testGetMedia_Success() {
         Media media = new Media.Builder().id(1).title("Test").build();
-        when(mediaRepository.findAll(any(), any(), any(), any())).thenReturn(List.of(media));
+        when(mediaRepository.findAll(any(), any(), any(), any(), any(), any())).thenReturn(List.of(media));
         
-        List<Media> result = mediaService.getMedia(null, null, null, null);
+        List<Media> result = mediaService.getMedia(null, null, null, null, null, null);
         
         assertNotNull(result);
         assertEquals(1, result.size());

@@ -53,16 +53,16 @@ public class MediaRepository {
         }
     }
 
-    public List<Media> findAll(String title, String mediaType, Integer releaseYear, Integer ageRestriction) {
+    public List<Media> findAll(String title, String mediaType, Integer releaseYear, Integer ageRestriction, String genre, Double minRating) {
         List<Media> mediaList = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT m.*, string_agg(mg.genre, ',') as genres FROM media m LEFT JOIN media_genres mg ON m.id = mg.media_id WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
-        if (title != null) {
+        if (title != null && !title.isEmpty()) {
             sql.append(" AND LOWER(m.title) LIKE ?");
             params.add("%" + title.toLowerCase() + "%");
         }
-        if (mediaType != null) {
+        if (mediaType != null && !mediaType.isEmpty()) {
             sql.append(" AND m.media_type = ?");
             params.add(mediaType);
         }
@@ -73,6 +73,15 @@ public class MediaRepository {
         if (ageRestriction != null) {
             sql.append(" AND m.age_restriction = ?");
             params.add(ageRestriction);
+        }
+        if (minRating != null) {
+            sql.append(" AND m.average_rating >= ?");
+            params.add(minRating);
+        }
+        if (genre != null && !genre.isEmpty()) {
+            // Filter by genre using subquery to avoid messing up the main join
+            sql.append(" AND m.id IN (SELECT media_id FROM media_genres WHERE genre = ?)");
+            params.add(genre);
         }
         
         sql.append(" GROUP BY m.id");
@@ -112,6 +121,52 @@ public class MediaRepository {
         return Optional.empty();
     }
 
+    public List<Media> findRecommendations(int userId) {
+        // Recommend media based on:
+        // 1. User's favorite genre (fetched via subquery if possible, or just passed, but let's try SQL)
+        // 2. Genres of media the user rated highly (>= 4 stars)
+        // 3. Exclude media already rated by user
+        // 4. Order by average_rating
+        
+        // Note: For pure JDBC, we can do this in one query or multiple.
+        // Let's assume we can get favorite genre from users table.
+        
+        String sql = "SELECT m.*, string_agg(mg.genre, ',') as genres " +
+                     "FROM media m " +
+                     "JOIN media_genres mg ON m.id = mg.media_id " +
+                     "WHERE m.id NOT IN (SELECT media_id FROM ratings WHERE user_id = ?) " +
+                     "AND ( " +
+                     "   mg.genre = (SELECT favorite_genre FROM users WHERE id = ?) " +
+                     "   OR mg.genre IN ( " +
+                     "       SELECT DISTINCT mg2.genre " +
+                     "       FROM media_genres mg2 " +
+                     "       JOIN ratings r ON mg2.media_id = r.media_id " +
+                     "       WHERE r.user_id = ? AND r.stars >= 4 " +
+                     "   ) " +
+                     ") " +
+                     "GROUP BY m.id " +
+                     "ORDER BY m.average_rating DESC " +
+                     "LIMIT 10";
+
+        List<Media> mediaList = new ArrayList<>();
+        Connection conn = databaseManager.getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setInt(2, userId);
+            stmt.setInt(3, userId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    mediaList.add(mapResultSetToMedia(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to get recommendations", e);
+        }
+        return mediaList;
+    }
+
     public void update(Media media) {
         String sql = "UPDATE media SET title = ?, description = ?, media_type = ?, release_year = ?, age_restriction = ? WHERE id = ?";
         Connection conn = databaseManager.getConnection();
@@ -149,6 +204,18 @@ public class MediaRepository {
             
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update media", e);
+        }
+    }
+
+    public void updateAverageRating(int mediaId, double averageRating) {
+        String sql = "UPDATE media SET average_rating = ? WHERE id = ?";
+        Connection conn = databaseManager.getConnection();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDouble(1, averageRating);
+            stmt.setInt(2, mediaId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update average rating", e);
         }
     }
 

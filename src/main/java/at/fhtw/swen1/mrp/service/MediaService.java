@@ -29,8 +29,8 @@ public class MediaService {
         return newMedia;
     }
 
-    public List<Media> getMedia(String title, String mediaType, Integer releaseYear, Integer ageRestriction) {
-        return mediaRepository.findAll(title, mediaType, releaseYear, ageRestriction);
+    public List<Media> getMedia(String title, String mediaType, Integer releaseYear, Integer ageRestriction, String genre, Double minRating) {
+        return mediaRepository.findAll(title, mediaType, releaseYear, ageRestriction, genre, minRating);
     }
     
     public Optional<Media> getMediaById(int id) {
