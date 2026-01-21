@@ -144,7 +144,7 @@ public class MediaRepository {
                      "       WHERE r.user_id = ? AND r.stars >= 4 " +
                      "   ) " +
                      ") " +
-                     "GROUP BY m.id " +
+                     "GROUP BY m.id, m.average_rating " +
                      "ORDER BY m.average_rating DESC " +
                      "LIMIT 10";
 
