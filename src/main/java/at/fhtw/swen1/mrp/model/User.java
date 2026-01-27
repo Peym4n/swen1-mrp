@@ -2,16 +2,31 @@ package at.fhtw.swen1.mrp.model;
 
 import java.time.LocalDateTime;
 
-public class User {
+/**
+ * User model class.
+ */
+public final class User {
+    /** The ID of the user. */
     private Integer id;
+    /** The username. */
     private String username;
+    /** The password. */
     private String password;
+    /** The email. */
     private String email;
+    /** The favorite genre. */
     private String favoriteGenre;
+    /** The auth token. */
     private String token;
+    /** The creation timestamp. */
     private LocalDateTime createdAt;
 
-    private User(Builder builder) {
+    /**
+     * Constructor using builder.
+     *
+     * @param builder the builder
+     */
+    private User(final Builder builder) {
         this.id = builder.id;
         this.username = builder.username;
         this.password = builder.password;
@@ -22,65 +37,197 @@ public class User {
     }
 
     // Getters
-    public Integer getId() { return id; }
-    public String getUsername() { return username; }
-    public String getPassword() { return password; }
-    public String getEmail() { return email; }
-    public String getFavoriteGenre() { return favoriteGenre; }
-    public String getToken() { return token; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    // Getters
+    /**
+     * Gets the ID.
+     *
+     * @return the ID
+     */
+    public Integer getId() {
+        return id;
+    }
+    /**
+     * Gets the username.
+     *
+     * @return the username
+     */
+    public String getUsername() {
+        return username;
+    }
+    /**
+     * Gets the password.
+     *
+     * @return the password
+     */
+    public String getPassword() {
+        return password;
+    }
+    /**
+     * Gets the email.
+     *
+     * @return the email
+     */
+    public String getEmail() {
+        return email;
+    }
+    /**
+     * Gets the favorite genre.
+     *
+     * @return the favorite genre
+     */
+    public String getFavoriteGenre() {
+        return favoriteGenre;
+    }
+    /**
+     * Gets the token.
+     *
+     * @return the token
+     */
+    public String getToken() {
+        return token;
+    }
+    /**
+     * Gets the creation timestamp.
+     *
+     * @return the creation timestamp
+     */
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
     // Setters (for non-builder updates)
-    public void setId(Integer id) { this.id = id; }
-    public void setPassword(String password) { this.password = password; }
-    public void setToken(String token) { this.token = token; }
+    /**
+     * Sets the ID.
+     *
+     * @param idArg the ID
+     */
+    public void setId(final Integer idArg) {
+        this.id = idArg;
+    }
 
-    public static class Builder {
+    /**
+     * Sets the password.
+     *
+     * @param passwordArg the password
+     */
+    public void setPassword(final String passwordArg) {
+        this.password = passwordArg;
+    }
+
+    /**
+     * Sets the token.
+     *
+     * @param tokenArg the token
+     */
+    public void setToken(final String tokenArg) {
+        this.token = tokenArg;
+    }
+
+    /**
+     * Builder for User.
+     */
+    public static final class Builder {
+        /** The ID. */
         private Integer id;
+        /** The username. */
         private String username;
+        /** The password. */
         private String password;
+        /** The email. */
         private String email;
+        /** The favorite genre. */
         private String favoriteGenre;
+        /** The token. */
         private String token;
+        /** The creation timestamp. */
         private LocalDateTime createdAt;
 
-        public Builder() {}
+        /** Default constructor. */
+        public Builder() {
+        }
 
-        public Builder id(Integer id) {
-            this.id = id;
+        /**
+         * Sets the ID.
+         *
+         * @param idArg the ID
+         * @return the builder
+         */
+        public Builder id(final Integer idArg) {
+            this.id = idArg;
             return this;
         }
 
-        public Builder username(String username) {
-            this.username = username;
+        /**
+         * Sets the username.
+         *
+         * @param usernameArg the username
+         * @return the builder
+         */
+        public Builder username(final String usernameArg) {
+            this.username = usernameArg;
             return this;
         }
 
-        public Builder password(String password) {
-            this.password = password;
+        /**
+         * Sets the password.
+         *
+         * @param passwordArg the password
+         * @return the builder
+         */
+        public Builder password(final String passwordArg) {
+            this.password = passwordArg;
             return this;
         }
 
-        public Builder email(String email) {
-            this.email = email;
+        /**
+         * Sets the email.
+         *
+         * @param emailArg the email
+         * @return the builder
+         */
+        public Builder email(final String emailArg) {
+            this.email = emailArg;
             return this;
         }
 
-        public Builder favoriteGenre(String favoriteGenre) {
-            this.favoriteGenre = favoriteGenre;
+        /**
+         * Sets the favorite genre.
+         *
+         * @param favoriteGenreArg the favorite genre
+         * @return the builder
+         */
+        public Builder favoriteGenre(final String favoriteGenreArg) {
+            this.favoriteGenre = favoriteGenreArg;
             return this;
         }
 
-        public Builder token(String token) {
-            this.token = token;
+        /**
+         * Sets the token.
+         *
+         * @param tokenArg the token
+         * @return the builder
+         */
+        public Builder token(final String tokenArg) {
+            this.token = tokenArg;
             return this;
         }
 
-        public Builder createdAt(LocalDateTime createdAt) {
-            this.createdAt = createdAt;
+        /**
+         * Sets the creation timestamp.
+         *
+         * @param createdAtArg the creation timestamp
+         * @return the builder
+         */
+        public Builder createdAt(final LocalDateTime createdAtArg) {
+            this.createdAt = createdAtArg;
             return this;
         }
 
+        /**
+         * Builds the User object.
+         *
+         * @return the User object
+         */
         public User build() {
             return new User(this);
         }

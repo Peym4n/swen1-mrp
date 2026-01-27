@@ -1,26 +1,42 @@
 package at.fhtw.swen1.mrp.handler;
 
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
 
-public class RatingRouter extends BaseRouter {
+/**
+ * Router for rating-related requests.
+ */
+public final class RatingRouter extends BaseRouter {
+    /** Handler for updating ratings. */
     private final UpdateRatingHandler updateRatingHandler;
+    /** Handler for deleting ratings. */
     private final DeleteRatingHandler deleteRatingHandler;
+    /** Handler for confirming ratings. */
     private final ConfirmRatingHandler confirmRatingHandler;
+    /** Handler for liking ratings. */
     private final LikeRatingHandler likeRatingHandler;
 
-    public RatingRouter(UpdateRatingHandler updateRatingHandler, DeleteRatingHandler deleteRatingHandler,
-                         ConfirmRatingHandler confirmRatingHandler, LikeRatingHandler likeRatingHandler) {
-        this.updateRatingHandler = updateRatingHandler;
-        this.deleteRatingHandler = deleteRatingHandler;
-        this.confirmRatingHandler = confirmRatingHandler;
-        this.likeRatingHandler = likeRatingHandler;
+    /**
+     * Constructor.
+     *
+     * @param updateRatingHandlerArg the update rating handler
+     * @param deleteRatingHandlerArg the delete rating handler
+     * @param confirmRatingHandlerArg the confirm rating handler
+     * @param likeRatingHandlerArg the like rating handler
+     */
+    public RatingRouter(final UpdateRatingHandler updateRatingHandlerArg,
+                        final DeleteRatingHandler deleteRatingHandlerArg,
+                        final ConfirmRatingHandler confirmRatingHandlerArg,
+                        final LikeRatingHandler likeRatingHandlerArg) {
+        this.updateRatingHandler = updateRatingHandlerArg;
+        this.deleteRatingHandler = deleteRatingHandlerArg;
+        this.confirmRatingHandler = confirmRatingHandlerArg;
+        this.likeRatingHandler = likeRatingHandlerArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
@@ -32,9 +48,11 @@ public class RatingRouter extends BaseRouter {
             } else {
                 sendMethodNotAllowed(exchange);
             }
-        } else if (path.matches("^/api/ratings/\\d+/confirm$") && "POST".equalsIgnoreCase(method)) {
+        } else if (path.matches("^/api/ratings/\\d+/confirm$")
+                && "POST".equalsIgnoreCase(method)) {
             confirmRatingHandler.handle(exchange);
-        } else if (path.matches("^/api/ratings/\\d+/like$") && "POST".equalsIgnoreCase(method)) {
+        } else if (path.matches("^/api/ratings/\\d+/like$")
+                && "POST".equalsIgnoreCase(method)) {
             likeRatingHandler.handle(exchange);
         } else {
             sendNotFound(exchange);

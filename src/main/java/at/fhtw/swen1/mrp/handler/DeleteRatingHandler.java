@@ -7,36 +7,57 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class DeleteRatingHandler extends BaseHandler {
+/**
+ * Handler for deleting ratings.
+ */
+public final class DeleteRatingHandler extends BaseHandler {
+    /** Service for rating operations. */
     private final RatingService ratingService;
 
-    public DeleteRatingHandler(UserService userService, RatingService ratingService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.ratingService = ratingService;
+    /** Index of the rating ID in the path. */
+    private static final int RATING_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param ratingServiceArg the rating service
+     * @param objectMapperArg the object mapper
+     */
+    public DeleteRatingHandler(final UserService userServiceArg,
+                               final RatingService ratingServiceArg,
+                               final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.ratingService = ratingServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"DELETE".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             User user = authenticate(exchange);
-            if (user == null) return;
+            if (user == null) {
+                return;
+            }
 
             // /api/ratings/{id}
-            int ratingId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
+            int ratingId = parseIdFromPath(exchange.getRequestURI().getPath(), RATING_ID_PATH_INDEX);
 
             ratingService.deleteRating(user.getId(), ratingId);
-            sendResponse(exchange, 204, "");
+            sendResponse(exchange, HttpURLConnection.HTTP_NO_CONTENT, "");
         } catch (IllegalArgumentException e) {
-            sendError(exchange, 400, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_BAD_REQUEST,
+                    e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

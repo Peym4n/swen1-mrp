@@ -7,39 +7,57 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.List;
 
-public class GetRecommendationsHandler extends BaseHandler {
+/**
+ * Handler for retrieving media recommendations for a user.
+ */
+public final class GetRecommendationsHandler extends BaseHandler {
 
-    public GetRecommendationsHandler(UserService userService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
+    /** Index of the user ID in the path. */
+    private static final int USER_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param objectMapperArg the object mapper
+     */
+    public GetRecommendationsHandler(final UserService userServiceArg,
+                                     final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             User user = authenticate(exchange);
-            if (user == null) return;
-
-            // /api/users/{id}/recommendations
-            int pathUserId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
-
-            if (user.getId() != pathUserId) {
-                sendError(exchange, 403, "Forbidden");
+            if (user == null) {
                 return;
             }
 
-            List<Media> recommendations = userService.getRecommendations(pathUserId);
-            String response = objectMapper.writeValueAsString(recommendations);
-            sendResponse(exchange, 200, response);
+            // /api/users/{id}/recommendations
+            int pathUserId = parseIdFromPath(exchange.getRequestURI().getPath(), USER_ID_PATH_INDEX);
+
+            if (user.getId() != pathUserId) {
+                sendError(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Forbidden");
+                return;
+            }
+
+            List<Media> recommendations = getUserService().getRecommendations(pathUserId);
+            String response = getObjectMapper()
+                    .writeValueAsString(recommendations);
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

@@ -7,21 +7,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
 
-public class GetMediaHandler extends BaseHandler {
+/**
+ * Handler for retrieving media with filtering.
+ */
+public final class GetMediaHandler extends BaseHandler {
+    /** Service for media operations. */
     private final MediaService mediaService;
 
-    public GetMediaHandler(UserService userService, MediaService mediaService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.mediaService = mediaService;
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param mediaServiceArg the media service
+     * @param objectMapperArg the object mapper
+     */
+    public GetMediaHandler(final UserService userServiceArg,
+                           final MediaService mediaServiceArg,
+                           final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.mediaService = mediaServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
@@ -37,11 +51,12 @@ public class GetMediaHandler extends BaseHandler {
             Double minRating = params.containsKey("rating") ? Double.parseDouble(params.get("rating")) : null;
 
             List<Media> mediaList = mediaService.getMedia(title, mediaType, releaseYear, ageRestriction, genre, minRating);
-            String response = objectMapper.writeValueAsString(mediaList);
-            sendResponse(exchange, 200, response);
+            String response = getObjectMapper().writeValueAsString(mediaList);
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

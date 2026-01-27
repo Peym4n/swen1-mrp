@@ -9,38 +9,59 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class UpdateRatingHandler extends BaseHandler {
+/**
+ * Handler for updating ratings.
+ */
+public final class UpdateRatingHandler extends BaseHandler {
+    /** Service for rating operations. */
     private final RatingService ratingService;
 
-    public UpdateRatingHandler(UserService userService, RatingService ratingService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.ratingService = ratingService;
+    /** Index of the rating ID in the path. */
+    private static final int RATING_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param ratingServiceArg the rating service
+     * @param objectMapperArg the object mapper
+     */
+    public UpdateRatingHandler(final UserService userServiceArg,
+                               final RatingService ratingServiceArg,
+                               final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.ratingService = ratingServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             User user = authenticate(exchange);
-            if (user == null) return;
+            if (user == null) {
+                return;
+            }
 
             // /api/ratings/{id}
-            int ratingId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
+            int ratingId = parseIdFromPath(exchange.getRequestURI().getPath(), RATING_ID_PATH_INDEX);
             RatingDTO dto = readBody(exchange, RatingDTO.class);
 
             Rating updated = ratingService.updateRating(user.getId(), ratingId, dto.getStars(), dto.getComment());
-            String response = objectMapper.writeValueAsString(updated);
-            sendResponse(exchange, 200, response);
+            String response = getObjectMapper().writeValueAsString(updated);
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
         } catch (IllegalArgumentException e) {
-            sendError(exchange, 400, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_BAD_REQUEST,
+                    e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

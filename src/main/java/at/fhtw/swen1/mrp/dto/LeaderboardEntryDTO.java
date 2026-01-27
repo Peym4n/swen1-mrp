@@ -1,29 +1,64 @@
 package at.fhtw.swen1.mrp.dto;
 
-public class LeaderboardEntryDTO {
+/**
+ * Data Transfer Object for Leaderboard entries.
+ */
+public final class LeaderboardEntryDTO {
+    /** The username of the user. */
     private String username;
+    /** The number of ratings the user has given. */
     private int ratingCount;
 
-    public LeaderboardEntryDTO() {}
-
-    public LeaderboardEntryDTO(String username, int ratingCount) {
-        this.username = username;
-        this.ratingCount = ratingCount;
+    /**
+     * Default constructor.
+     */
+    public LeaderboardEntryDTO() {
     }
 
+    /**
+     * Constructor with all fields.
+     *
+     * @param usernameVal the username
+     * @param ratingCountVal the rating count
+     */
+    public LeaderboardEntryDTO(final String usernameVal, final int ratingCountVal) {
+        this.username = usernameVal;
+        this.ratingCount = ratingCountVal;
+    }
+
+    /**
+     * Gets the username.
+     *
+     * @return the username
+     */
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    /**
+     * Sets the username.
+     *
+     * @param usernameVal the username to set
+     */
+    public void setUsername(final String usernameVal) {
+        this.username = usernameVal;
     }
 
+    /**
+     * Gets the rating count.
+     *
+     * @return the rating count
+     */
     public int getRatingCount() {
         return ratingCount;
     }
 
-    public void setRatingCount(int ratingCount) {
-        this.ratingCount = ratingCount;
+    /**
+     * Sets the rating count.
+     *
+     * @param ratingCountVal the rating count to set
+     */
+    public void setRatingCount(final int ratingCountVal) {
+        this.ratingCount = ratingCountVal;
     }
 }

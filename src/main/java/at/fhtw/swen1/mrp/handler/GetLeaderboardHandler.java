@@ -7,31 +7,46 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.List;
 
-public class GetLeaderboardHandler extends BaseHandler {
+/**
+ * Handler for retrieving the leaderboard.
+ */
+public final class GetLeaderboardHandler extends BaseHandler {
+    /** Service for rating operations. */
     private final RatingService ratingService;
 
-    public GetLeaderboardHandler(UserService userService, RatingService ratingService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.ratingService = ratingService;
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param ratingServiceArg the rating service
+     * @param objectMapperArg the object mapper
+     */
+    public GetLeaderboardHandler(final UserService userServiceArg,
+                                 final RatingService ratingServiceArg,
+                                 final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.ratingService = ratingServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             // Public endpoint, no authentication required
             List<LeaderboardEntryDTO> leaderboard = ratingService.getLeaderboard();
-            String response = objectMapper.writeValueAsString(leaderboard);
-            sendResponse(exchange, 200, response);
+            String response = getObjectMapper().writeValueAsString(leaderboard);
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, "Internal Server Error");
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    "Internal Server Error");
         }
     }
 }

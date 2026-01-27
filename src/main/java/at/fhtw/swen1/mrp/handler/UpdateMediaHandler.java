@@ -9,27 +9,46 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class UpdateMediaHandler extends BaseHandler {
+/**
+ * Handler for updating media.
+ */
+public final class UpdateMediaHandler extends BaseHandler {
+    /** Service for media operations. */
     private final MediaService mediaService;
 
-    public UpdateMediaHandler(UserService userService, MediaService mediaService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.mediaService = mediaService;
+    /** Index of the media ID in the path. */
+    private static final int MEDIA_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param mediaServiceArg the media service
+     * @param objectMapperArg the object mapper
+     */
+    public UpdateMediaHandler(final UserService userServiceArg,
+                              final MediaService mediaServiceArg,
+                              final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.mediaService = mediaServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             User user = authenticate(exchange);
-            if (user == null) return;
+            if (user == null) {
+                return;
+            }
 
-            int mediaId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
+            int mediaId = parseIdFromPath(exchange.getRequestURI().getPath(), MEDIA_ID_PATH_INDEX);
             MediaDTO mediaDTO = readBody(exchange, MediaDTO.class);
 
             Media mediaUpdates = new Media.Builder()
@@ -42,13 +61,15 @@ public class UpdateMediaHandler extends BaseHandler {
                     .build();
 
             Media updated = mediaService.updateMedia(mediaId, mediaUpdates, user.getId());
-            String response = objectMapper.writeValueAsString(updated);
-            sendResponse(exchange, 200, response);
+            String response = getObjectMapper().writeValueAsString(updated);
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
         } catch (IllegalArgumentException e) {
-            sendError(exchange, 400, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_BAD_REQUEST,
+                    e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

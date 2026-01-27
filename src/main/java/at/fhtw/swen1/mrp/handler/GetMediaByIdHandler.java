@@ -7,37 +7,55 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.Optional;
 
-public class GetMediaByIdHandler extends BaseHandler {
+/**
+ * Handler for retrieving media by ID.
+ */
+public final class GetMediaByIdHandler extends BaseHandler {
+    /** Service for media operations. */
     private final MediaService mediaService;
 
-    public GetMediaByIdHandler(UserService userService, MediaService mediaService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.mediaService = mediaService;
+    /** Index of the media ID in the path. */
+    private static final int MEDIA_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param mediaServiceArg the media service
+     * @param objectMapperArg the object mapper
+     */
+    public GetMediaByIdHandler(final UserService userServiceArg,
+                               final MediaService mediaServiceArg,
+                               final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.mediaService = mediaServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             // /api/media/{id}
-            int mediaId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
+            int mediaId = parseIdFromPath(exchange.getRequestURI().getPath(), MEDIA_ID_PATH_INDEX);
 
             Optional<Media> media = mediaService.getMediaById(mediaId);
             if (media.isPresent()) {
-                String response = objectMapper.writeValueAsString(media.get());
-                sendResponse(exchange, 200, response);
+                String response = getObjectMapper().writeValueAsString(media.get());
+                sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
             } else {
-                sendError(exchange, 404, "Media not found");
+                sendError(exchange, HttpURLConnection.HTTP_NOT_FOUND, "Media not found");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 400, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_BAD_REQUEST,
+                    e.getMessage());
         }
     }
 }

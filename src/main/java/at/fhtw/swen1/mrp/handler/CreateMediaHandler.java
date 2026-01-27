@@ -9,25 +9,41 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class CreateMediaHandler extends BaseHandler {
+/**
+ * Handler for creating new media.
+ */
+public final class CreateMediaHandler extends BaseHandler {
+    /** Service for media operations. */
     private final MediaService mediaService;
 
-    public CreateMediaHandler(UserService userService, MediaService mediaService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.mediaService = mediaService;
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param mediaServiceArg the media service
+     * @param objectMapperArg the object mapper
+     */
+    public CreateMediaHandler(final UserService userServiceArg,
+                              final MediaService mediaServiceArg,
+                              final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.mediaService = mediaServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             User user = authenticate(exchange);
-            if (user == null) return;
+            if (user == null) {
+                return;
+            }
 
             MediaDTO mediaDTO = readBody(exchange, MediaDTO.class);
             Media mediaInput = new Media.Builder()
@@ -40,11 +56,12 @@ public class CreateMediaHandler extends BaseHandler {
                     .build();
 
             Media createdMedia = mediaService.createMedia(mediaInput, user.getId());
-            String response = objectMapper.writeValueAsString(createdMedia);
-            sendResponse(exchange, 201, response);
+            String response = getObjectMapper().writeValueAsString(createdMedia);
+            sendResponse(exchange, HttpURLConnection.HTTP_CREATED, response);
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 400, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_BAD_REQUEST,
+                    e.getMessage());
         }
     }
 }

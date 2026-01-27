@@ -15,64 +15,96 @@ import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
 import java.math.BigInteger;
 
-public class UserService {
+/**
+ * Service for managing users.
+ */
+public final class UserService {
+    /** The user repository. */
     private final UserRepository userRepository;
+    /** The media repository. */
     private final MediaRepository mediaRepository;
 
-    public UserService(UserRepository userRepository, MediaRepository mediaRepository) {
-        this.userRepository = userRepository;
-        this.mediaRepository = mediaRepository;
-    }
-    
-    // Constructor for tests that don't need mediaRepository
-    public UserService(UserRepository userRepository) {
-        this(userRepository, null);
+    /**
+     * Constructor.
+     *
+     * @param userRepositoryArg the user repository
+     * @param mediaRepositoryArg the media repository
+     */
+    public UserService(final UserRepository userRepositoryArg,
+                       final MediaRepository mediaRepositoryArg) {
+        this.userRepository = userRepositoryArg;
+        this.mediaRepository = mediaRepositoryArg;
     }
 
-    public User register(User user) {
+    /**
+     * Constructor for tests that don't need mediaRepository.
+     *
+     * @param userRepositoryArg the user repository
+     */
+    public UserService(final UserRepository userRepositoryArg) {
+        this(userRepositoryArg, null);
+    }
+
+    /**
+     * Registers a user.
+     *
+     * @param user the user to register
+     * @return the registered user
+     */
+    public User register(final User user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new RuntimeException("User already exists");
         }
-        
+
         String hashedPassword = hashPassword(user.getPassword());
-        
+
         user.setPassword(hashedPassword);
-        
+
         userRepository.save(user);
-        
         return user;
     }
 
-    public String login(String username, String password) {
+    /**
+     * Logs in a user.
+     *
+     * @param username the username
+     * @param password the password
+     * @return the auth token
+     */
+    public String login(final String username, final String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
-        
+
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             String hashedInput = hashPassword(password);
-            
+
             if (user.getPassword().equals(hashedInput)) {
                 // Generate token with random part
                 String token = "mrp-token-" + UUID.randomUUID().toString();
-                
+
                 // Store/Update token in DB
                 userRepository.updateToken(user.getId(), token);
-                
-                return token; 
+
+                return token;
             }
         }
         throw new RuntimeException("Invalid credentials");
     }
 
-    private String hashPassword(String password) {
+    // CHECKSTYLE:OFF: MagicNumber
+    private String hashPassword(final String password) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] hash = md.digest(password.getBytes(StandardCharsets.UTF_8));
             // Convert byte array to signum representation
-            BigInteger number = new BigInteger(1, hash);
+            final int signum = 1;
+            BigInteger number = new BigInteger(signum, hash);
             // Convert message digest into hex value
-            StringBuilder hexString = new StringBuilder(number.toString(16));
+            final int hexRadix = 16;
+            StringBuilder hexString = new StringBuilder(number.toString(hexRadix));
             // Pad with leading zeros
-            while (hexString.length() < 32) {
+            final int hashLength = 32;
+            while (hexString.length() < hashLength) {
                 hexString.insert(0, '0');
             }
             return hexString.toString();
@@ -80,28 +112,50 @@ public class UserService {
             throw new RuntimeException("Could not hash password", e);
         }
     }
-    
-    public Optional<User> getUserByToken(String token) {
+    // CHECKSTYLE:ON: MagicNumber
+
+    /**
+     * Gets user by token.
+     *
+     * @param token the auth token
+     * @return optional user
+     */
+    public Optional<User> getUserByToken(final String token) {
         if (token != null && token.startsWith("Bearer ")) {
             String cleanToken = token.substring("Bearer ".length());
             return userRepository.findByToken(cleanToken);
         }
         return Optional.empty();
     }
-    
-    public User updateProfile(int userId, String email, String favoriteGenre) {
+
+    /**
+     * Updates user profile.
+     *
+     * @param userId the user ID
+     * @param email the email
+     * @param favoriteGenre the favorite genre
+     * @return the updated user
+     */
+    public User updateProfile(final int userId, final String email, final String favoriteGenre) {
         User user = new User.Builder()
                 .id(userId)
                 .email(email)
                 .favoriteGenre(favoriteGenre)
                 .build();
-                
+
+
         userRepository.update(user);
-        
+
         return user;
     }
 
-    public UserProfileDTO getUserProfile(int userId) {
+    /**
+     * Gets user profile with stats.
+     *
+     * @param userId the user ID
+     * @return the profile DTO
+     */
+    public UserProfileDTO getUserProfile(final int userId) {
         UserProfileDTO profile = userRepository.getProfileWithStats(userId);
         if (profile == null) {
             throw new IllegalArgumentException("User not found");
@@ -109,7 +163,13 @@ public class UserService {
         return profile;
     }
 
-    public List<Media> getRecommendations(int userId) {
+    /**
+     * Gets recommendations for user.
+     *
+     * @param userId the user ID
+     * @return list of recommended media
+     */
+    public List<Media> getRecommendations(final int userId) {
         if (mediaRepository == null) {
             throw new IllegalStateException("MediaRepository not initialized");
         }

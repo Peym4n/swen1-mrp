@@ -6,32 +6,47 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class GetUserProfileHandler extends BaseHandler {
+/**
+ * Handler for retrieving a user's profile.
+ */
+public final class GetUserProfileHandler extends BaseHandler {
+    /** Index of the user ID in the path. */
+    private static final int USER_ID_PATH_INDEX = 3;
 
-    public GetUserProfileHandler(UserService userService, ObjectMapper objectMapper) {
+    /**
+     * Constructor.
+     *
+     * @param userService the user service
+     * @param objectMapper the object mapper
+     */
+    public GetUserProfileHandler(final UserService userService,
+                                 final ObjectMapper objectMapper) {
         super(objectMapper, userService);
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             // Path: /api/users/{id}/profile
-            int userId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
-            
-            UserProfileDTO profile = userService.getUserProfile(userId);
-            String response = objectMapper.writeValueAsString(profile);
-            sendResponse(exchange, 200, response);
+            int userId = parseIdFromPath(exchange.getRequestURI().getPath(), USER_ID_PATH_INDEX);
+
+            UserProfileDTO profile = getUserService().getUserProfile(userId);
+            String response = getObjectMapper().writeValueAsString(profile);
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
         } catch (IllegalArgumentException e) {
-            sendError(exchange, 404, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_NOT_FOUND,
+                    e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

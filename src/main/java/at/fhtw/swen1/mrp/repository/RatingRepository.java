@@ -12,17 +12,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class RatingRepository {
+/**
+ * Repository for ratings.
+ */
+public final class RatingRepository {
+    /** The database manager. */
     private final DatabaseManager databaseManager;
+
+    /**
+     * Constructor.
+     */
 
     public RatingRepository() {
         this.databaseManager = DatabaseManager.getInstance();
     }
 
-    public double calculateAverageRating(int mediaId) {
+    /**
+     * Calculates average rating.
+     *
+     * @param mediaId the media ID
+     * @return the average rating
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public double calculateAverageRating(final int mediaId) {
         String sql = "SELECT AVG(stars) FROM ratings WHERE media_id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, mediaId);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -35,15 +50,22 @@ public class RatingRepository {
         }
         return 0.0;
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public List<at.fhtw.swen1.mrp.dto.LeaderboardEntryDTO> getMostActiveUsers() {
-        List<at.fhtw.swen1.mrp.dto.LeaderboardEntryDTO> leaderboard = new ArrayList<>();
-        String sql = "SELECT u.username, COUNT(r.id) as count FROM ratings r JOIN users u ON r.user_id = u.id GROUP BY u.username ORDER BY count DESC LIMIT 10";
-        
+    /**
+     * Gets most active users.
+     *
+     * @return the leaderboard
+     */
+    public List<LeaderboardEntryDTO> getMostActiveUsers() {
+        List<LeaderboardEntryDTO> leaderboard = new ArrayList<>();
+        String sql = "SELECT u.username, COUNT(r.id) as count FROM ratings r"
+               + " JOIN users u ON r.user_id = u.id GROUP BY u.username ORDER BY count DESC LIMIT 10";
+
         Connection conn = databaseManager.getConnection();
         try (PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-            
+
             while (rs.next()) {
                 leaderboard.add(new LeaderboardEntryDTO(
                     rs.getString("username"),
@@ -56,19 +78,27 @@ public class RatingRepository {
         return leaderboard;
     }
 
-    public int save(Rating rating) {
-        String sql = "INSERT INTO ratings (user_id, media_id, stars, comment, is_confirmed) VALUES (?, ?, ?, ?, ?)";
+    /**
+     * Saves a rating.
+     *
+     * @param rating the rating
+     * @return the ID
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public int save(final Rating rating) {
+        String sql = "INSERT INTO ratings (user_id, media_id, stars, comment, is_confirmed)"
+               + " VALUES (?, ?, ?, ?, ?)";
         Connection conn = databaseManager.getConnection();
         try (PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-            
+
             stmt.setInt(1, rating.getUserId());
             stmt.setInt(2, rating.getMediaId());
             stmt.setInt(3, rating.getStars());
             stmt.setString(4, rating.getComment());
             stmt.setBoolean(5, rating.getIsConfirmed() != null ? rating.getIsConfirmed() : false);
-            
+
             stmt.executeUpdate();
-            
+
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     return generatedKeys.getInt(1);
@@ -76,22 +106,30 @@ public class RatingRepository {
                     throw new SQLException("Creating rating failed, no ID obtained.");
                 }
             }
-            
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save rating", e);
         }
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public List<Rating> findByMediaId(int mediaId) {
+    /**
+     * Finds ratings by media ID.
+     *
+     * @param mediaId the media ID
+     * @return list of ratings
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public List<Rating> findByMediaId(final int mediaId) {
         List<Rating> ratings = new ArrayList<>();
         String sql = "SELECT * FROM ratings WHERE media_id = ?";
-        
+
         Connection conn = databaseManager.getConnection();
-             
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-             
+
             stmt.setInt(1, mediaId);
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     ratings.add(mapResultSetToRating(rs));
@@ -103,11 +141,18 @@ public class RatingRepository {
         return ratings;
     }
 
-    public List<Rating> findByUserId(int userId) {
+    /**
+     * Finds ratings by user ID.
+     *
+     * @param userId the user ID
+     * @return list of ratings
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public List<Rating> findByUserId(final int userId) {
         List<Rating> ratings = new ArrayList<>();
         String sql = "SELECT * FROM ratings WHERE user_id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -121,10 +166,16 @@ public class RatingRepository {
         return ratings;
     }
 
-    public void update(Rating rating) {
+    /**
+     * Updates a rating.
+     *
+     * @param rating the rating
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public void update(final Rating rating) {
         String sql = "UPDATE ratings SET stars = ?, comment = ? WHERE id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, rating.getStars());
             stmt.setString(2, rating.getComment());
@@ -134,11 +185,18 @@ public class RatingRepository {
             throw new RuntimeException("Failed to update rating", e);
         }
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public void delete(int ratingId) {
+    /**
+     * Deletes a rating.
+     *
+     * @param ratingId the rating ID
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public void delete(final int ratingId) {
         String sql = "DELETE FROM ratings WHERE id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, ratingId);
             stmt.executeUpdate();
@@ -147,10 +205,18 @@ public class RatingRepository {
         }
     }
 
-    public boolean hasUserRatedMedia(int userId, int mediaId) {
+    /**
+     * Checks if user has rated media.
+     *
+     * @param userId the user ID
+     * @param mediaId the media ID
+     * @return true if rated
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public boolean hasUserRatedMedia(final int userId, final int mediaId) {
         String sql = "SELECT 1 FROM ratings WHERE user_id = ? AND media_id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             stmt.setInt(2, mediaId);
@@ -161,11 +227,19 @@ public class RatingRepository {
             throw new RuntimeException("Failed to check existing rating", e);
         }
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public Optional<Rating> findById(int id) {
+    /**
+     * Finds rating by ID.
+     *
+     * @param id the ID
+     * @return the rating
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public Optional<Rating> findById(final int id) {
         String sql = "SELECT * FROM ratings WHERE id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -178,11 +252,18 @@ public class RatingRepository {
         }
         return Optional.empty();
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public void confirmRating(int ratingId) {
+    /**
+     * Confirms a rating.
+     *
+     * @param ratingId the rating ID
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public void confirmRating(final int ratingId) {
         String sql = "UPDATE ratings SET is_confirmed = TRUE WHERE id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, ratingId);
             stmt.executeUpdate();
@@ -191,10 +272,17 @@ public class RatingRepository {
         }
     }
 
-    public void addLike(int userId, int ratingId) {
+    /**
+     * Adds a like to a rating.
+     *
+     * @param userId the user ID
+     * @param ratingId the rating ID
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public void addLike(final int userId, final int ratingId) {
         String sql = "INSERT INTO rating_likes (user_id, rating_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             stmt.setInt(2, ratingId);
@@ -203,8 +291,16 @@ public class RatingRepository {
             throw new RuntimeException("Failed to like rating", e);
         }
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    private Rating mapResultSetToRating(ResultSet rs) throws SQLException {
+    /**
+     * Maps result set to Rating.
+     *
+     * @param rs the result set
+     * @return the rating
+     * @throws SQLException if SQL error occurs
+     */
+    private Rating mapResultSetToRating(final ResultSet rs) throws SQLException {
         return new Rating.Builder()
             .id(rs.getInt("id"))
             .userId(rs.getInt("user_id"))

@@ -1,22 +1,40 @@
 package at.fhtw.swen1.mrp.model;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-public class Media {
+/**
+ * Media model class.
+ */
+public final class Media {
+    /** The ID of the media. */
     private Integer id;
-    private Integer creatorId;
-    private String title;
-    private String description;
-    private String mediaType;
-    private Integer releaseYear;
-    private Integer ageRestriction;
+    /** The ID of the creator. */
+    private final Integer creatorId;
+    /** The title of the media. */
+    private final String title;
+    /** The description of the media. */
+    private final String description;
+    /** The type of the media (e.g., Movie, Song). */
+    private final String mediaType;
+    /** The release year. */
+    private final Integer releaseYear;
+    /** The age restriction. */
+    private final Integer ageRestriction;
+    /** The average rating. */
     private Double averageRating;
-    private LocalDateTime createdAt;
-    private List<String> genres;
+    /** The creation timestamp. */
+    private final LocalDateTime createdAt;
+    /** The genres of the media. */
+    private final List<String> genres;
 
-    private Media(Builder builder) {
+    /**
+     * Constructor using builder.
+     *
+     * @param builder the builder
+     */
+    private Media(final Builder builder) {
         this.id = builder.id;
         this.creatorId = builder.creatorId;
         this.title = builder.title;
@@ -30,46 +48,251 @@ public class Media {
     }
 
     // Getters
-    public Integer getId() { return id; }
-    public Integer getCreatorId() { return creatorId; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public String getMediaType() { return mediaType; }
-    public Integer getReleaseYear() { return releaseYear; }
-    public Integer getAgeRestriction() { return ageRestriction; }
-    public Double getAverageRating() { return averageRating; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public List<String> getGenres() { return genres; }
+    // Getters
+    /**
+     * Gets the ID.
+     *
+     * @return the ID
+     */
+    public Integer getId() {
+        return id;
+    }
+    /**
+     * Gets the creator ID.
+     *
+     * @return the creator ID
+     */
+    public Integer getCreatorId() {
+        return creatorId;
+    }
+    /**
+     * Gets the title.
+     *
+     * @return the title
+     */
+    public String getTitle() {
+        return title;
+    }
+    /**
+     * Gets the description.
+     *
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
+    /**
+     * Gets the media type.
+     *
+     * @return the media type
+     */
+    public String getMediaType() {
+        return mediaType;
+    }
+    /**
+     * Gets the release year.
+     *
+     * @return the release year
+     */
+    public Integer getReleaseYear() {
+        return releaseYear;
+    }
+    /**
+     * Gets the age restriction.
+     *
+     * @return the age restriction
+     */
+    public Integer getAgeRestriction() {
+        return ageRestriction;
+    }
+    /**
+     * Gets the average rating.
+     *
+     * @return the average rating
+     */
+    public Double getAverageRating() {
+        return averageRating;
+    }
+    /**
+     * Gets the creation timestamp.
+     *
+     * @return the creation timestamp
+     */
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    /**
+     * Gets the genres.
+     *
+     * @return the genres
+     */
+    public List<String> getGenres() {
+        return genres;
+    }
 
     // Setters
-    public void setId(Integer id) { this.id = id; }
-    public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
+    /**
+     * Sets the ID.
+     *
+     * @param idArg the ID
+     */
+    public void setId(final Integer idArg) {
+        this.id = idArg;
+    }
 
-    public static class Builder {
+    /**
+     * Sets the average rating.
+     *
+     * @param averageRatingArg the average rating
+     */
+    public void setAverageRating(final Double averageRatingArg) {
+        this.averageRating = averageRatingArg;
+    }
+
+    /**
+     * Builder for Media.
+     */
+    public static final class Builder {
+        /** The ID. */
         private Integer id;
+        /** The creator ID. */
         private Integer creatorId;
+        /** The title. */
         private String title;
+        /** The description. */
         private String description;
+        /** The media type. */
         private String mediaType;
+        /** The release year. */
         private Integer releaseYear;
+        /** The age restriction. */
         private Integer ageRestriction;
+        /** The average rating. */
         private Double averageRating;
+        /** The creation timestamp. */
         private LocalDateTime createdAt;
+        /** The genres. */
         private List<String> genres = new ArrayList<>();
 
-        public Builder() {}
+        /** Default constructor. */
+        public Builder() {
+        }
 
-        public Builder id(Integer id) { this.id = id; return this; }
-        public Builder creatorId(Integer creatorId) { this.creatorId = creatorId; return this; }
-        public Builder title(String title) { this.title = title; return this; }
-        public Builder description(String description) { this.description = description; return this; }
-        public Builder mediaType(String mediaType) { this.mediaType = mediaType; return this; }
-        public Builder releaseYear(Integer releaseYear) { this.releaseYear = releaseYear; return this; }
-        public Builder ageRestriction(Integer ageRestriction) { this.ageRestriction = ageRestriction; return this; }
-        public Builder averageRating(Double averageRating) { this.averageRating = averageRating; return this; }
-        public Builder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
-        public Builder genres(List<String> genres) { this.genres = genres; return this; }
+        /**
+         * Sets the ID.
+         *
+         * @param idArg the ID
+         * @return the builder
+         */
+        public Builder id(final Integer idArg) {
+            this.id = idArg;
+            return this;
+        }
 
+        /**
+         * Sets the creator ID.
+         *
+         * @param creatorIdArg the creator ID
+         * @return the builder
+         */
+        public Builder creatorId(final Integer creatorIdArg) {
+            this.creatorId = creatorIdArg;
+            return this;
+        }
+
+        /**
+         * Sets the title.
+         *
+         * @param titleArg the title
+         * @return the builder
+         */
+        public Builder title(final String titleArg) {
+            this.title = titleArg;
+            return this;
+        }
+
+        /**
+         * Sets the description.
+         *
+         * @param descriptionArg the description
+         * @return the builder
+         */
+        public Builder description(final String descriptionArg) {
+            this.description = descriptionArg;
+            return this;
+        }
+
+        /**
+         * Sets the media type.
+         *
+         * @param mediaTypeArg the media type
+         * @return the builder
+         */
+        public Builder mediaType(final String mediaTypeArg) {
+            this.mediaType = mediaTypeArg;
+            return this;
+        }
+
+        /**
+         * Sets the release year.
+         *
+         * @param releaseYearArg the release year
+         * @return the builder
+         */
+        public Builder releaseYear(final Integer releaseYearArg) {
+            this.releaseYear = releaseYearArg;
+            return this;
+        }
+
+        /**
+         * Sets the age restriction.
+         *
+         * @param ageRestrictionArg the age restriction
+         * @return the builder
+         */
+        public Builder ageRestriction(final Integer ageRestrictionArg) {
+            this.ageRestriction = ageRestrictionArg;
+            return this;
+        }
+
+        /**
+         * Sets the average rating.
+         *
+         * @param averageRatingArg the average rating
+         * @return the builder
+         */
+        public Builder averageRating(final Double averageRatingArg) {
+            this.averageRating = averageRatingArg;
+            return this;
+        }
+
+        /**
+         * Sets the creation timestamp.
+         *
+         * @param createdAtArg the creation timestamp
+         * @return the builder
+         */
+        public Builder createdAt(final LocalDateTime createdAtArg) {
+            this.createdAt = createdAtArg;
+            return this;
+        }
+
+        /**
+         * Sets the genres.
+         *
+         * @param genresArg the genres
+         * @return the builder
+         */
+        public Builder genres(final List<String> genresArg) {
+            this.genres = genresArg;
+            return this;
+        }
+
+        /**
+         * Builds the Media object.
+         *
+         * @return the Media object
+         */
         public Media build() {
             return new Media(this);
         }

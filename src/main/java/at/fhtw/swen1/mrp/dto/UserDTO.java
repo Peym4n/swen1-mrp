@@ -1,42 +1,93 @@
 package at.fhtw.swen1.mrp.dto;
 
-public class UserDTO {
+/**
+ * Data Transfer Object for User registration/login.
+ */
+public final class UserDTO {
+    /** The username. */
     private String username;
+    /** The password. */
     private String password;
+    /** The email address. */
     private String email;
+    /** The user's favorite genre. */
     private String favoriteGenre;
 
-    public UserDTO() {}
+    /**
+     * Default constructor.
+     */
+    public UserDTO() {
+    }
 
+    /**
+     * Gets the username.
+     *
+     * @return the username
+     */
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    /**
+     * Sets the username.
+     *
+     * @param usernameVal the username to set
+     */
+    public void setUsername(final String usernameVal) {
+        this.username = usernameVal;
     }
 
+    /**
+     * Gets the password.
+     *
+     * @return the password
+     */
     public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    /**
+     * Sets the password.
+     *
+     * @param passwordVal the password to set
+     */
+    public void setPassword(final String passwordVal) {
+        this.password = passwordVal;
     }
 
+    /**
+     * Gets the email.
+     *
+     * @return the email
+     */
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    /**
+     * Sets the email.
+     *
+     * @param emailVal the email to set
+     */
+    public void setEmail(final String emailVal) {
+        this.email = emailVal;
     }
 
+    /**
+     * Gets the favorite genre.
+     *
+     * @return the favorite genre
+     */
     public String getFavoriteGenre() {
         return favoriteGenre;
     }
 
-    public void setFavoriteGenre(String favoriteGenre) {
-        this.favoriteGenre = favoriteGenre;
+    /**
+     * Sets the favorite genre.
+     *
+     * @param favoriteGenreVal the favorite genre to set
+     */
+    public void setFavoriteGenre(final String favoriteGenreVal) {
+        this.favoriteGenre = favoriteGenreVal;
     }
 }

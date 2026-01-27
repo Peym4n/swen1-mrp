@@ -6,29 +6,39 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class LoginHandler extends BaseHandler {
+/**
+ * Handler for user login.
+ */
+public final class LoginHandler extends BaseHandler {
 
-    public LoginHandler(UserService userService, ObjectMapper objectMapper) {
+    /**
+     * Constructor.
+     *
+     * @param userService the user service
+     * @param objectMapper the object mapper
+     */
+    public LoginHandler(final UserService userService,
+                        final ObjectMapper objectMapper) {
         super(objectMapper, userService);
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             UserDTO dto = readBody(exchange, UserDTO.class);
-            String token = userService.login(dto.getUsername(), dto.getPassword());
-            sendResponse(exchange, 200, "{\"token\": \"" + token + "\"}");
+            String token = getUserService().login(dto.getUsername(), dto.getPassword());
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, "{\"token\": \"" + token + "\"}");
         } catch (Exception e) {
-            // e.printStackTrace(); // Optional logging
             // UserService throws RuntimeException for invalid creds
-            // We can check message or generic 400
-             sendError(exchange, 400, e.getMessage()); // Or "Invalid credentials"
+            sendError(exchange, HttpURLConnection.HTTP_BAD_REQUEST,
+                    e.getMessage());
         }
     }
 }

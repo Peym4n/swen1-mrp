@@ -4,22 +4,46 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 
+/**
+ * Base router providing common routing functionality.
+ */
 public abstract class BaseRouter implements HttpHandler {
 
-    protected void sendNotFound(HttpExchange exchange) throws IOException {
+    /**
+     * Sends a 404 Not Found response.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs
+     */
+    protected void sendNotFound(final HttpExchange exchange) throws IOException {
         String resp = "{\"error\": \"Not Found\"}";
-        sendResponse(exchange, 404, resp);
+        sendResponse(exchange, HttpURLConnection.HTTP_NOT_FOUND, resp);
     }
 
-    protected void sendMethodNotAllowed(HttpExchange exchange) throws IOException {
+    /**
+     * Sends a 405 Method Not Allowed response.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs
+     */
+    protected void sendMethodNotAllowed(final HttpExchange exchange) throws IOException {
         String resp = "{\"error\": \"Method Not Allowed\"}";
-        sendResponse(exchange, 405, resp);
+        sendResponse(exchange, HttpURLConnection.HTTP_BAD_METHOD, resp);
     }
 
-    protected void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+    /**
+     * Sends an HTTP response.
+     *
+     * @param exchange the HTTP exchange
+     * @param statusCode the HTTP status code
+     * @param response the response body
+     * @throws IOException if an I/O error occurs
+     */
+    protected void sendResponse(final HttpExchange exchange, final int statusCode, final String response) throws IOException {
         byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(statusCode, responseBytes.length);

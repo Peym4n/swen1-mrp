@@ -7,33 +7,51 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.List;
 
-public class GetUserRatingsHandler extends BaseHandler {
+/**
+ * Handler for retrieving a user's ratings.
+ */
+public final class GetUserRatingsHandler extends BaseHandler {
+    /** Service for rating operations. */
     private final RatingService ratingService;
 
-    public GetUserRatingsHandler(UserService userService, RatingService ratingService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.ratingService = ratingService;
+    /** Index of the user ID in the path. */
+    private static final int USER_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param ratingServiceArg the rating service
+     * @param objectMapperArg the object mapper
+     */
+    public GetUserRatingsHandler(final UserService userServiceArg,
+                                 final RatingService ratingServiceArg,
+                                 final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.ratingService = ratingServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             // /api/users/{id}/ratings
-            int userId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
+            int userId = parseIdFromPath(exchange.getRequestURI().getPath(), USER_ID_PATH_INDEX);
 
             List<Rating> ratings = ratingService.getUserRatings(userId);
-            String response = objectMapper.writeValueAsString(ratings);
-            sendResponse(exchange, 200, response);
+            String response = getObjectMapper().writeValueAsString(ratings);
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, response);
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

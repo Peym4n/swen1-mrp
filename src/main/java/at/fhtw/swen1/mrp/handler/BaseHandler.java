@@ -9,20 +9,59 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Base handler providing common functionality for HTTP handlers.
+ */
 public abstract class BaseHandler implements HttpHandler {
-    protected final ObjectMapper objectMapper;
-    protected final UserService userService; // Common dependency for auth
+    /** JSON Object Mapper. */
+    private final ObjectMapper objectMapper;
+    /** User Service for authentication. */
+    private final UserService userService;
 
-    public BaseHandler(ObjectMapper objectMapper, UserService userService) {
-        this.objectMapper = objectMapper;
-        this.userService = userService;
+    /**
+     * Constructor.
+     *
+     * @param objectMapperArg the object mapper
+     * @param userServiceArg the user service
+     */
+    public BaseHandler(final ObjectMapper objectMapperArg,
+                       final UserService userServiceArg) {
+        this.objectMapper = objectMapperArg;
+        this.userService = userServiceArg;
     }
 
-    protected void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+    /**
+     * Gets the object mapper.
+     *
+     * @return the object mapper
+     */
+    protected ObjectMapper getObjectMapper() {
+        return objectMapper;
+    }
+
+    /**
+     * Gets the user service.
+     *
+     * @return the user service
+     */
+    protected UserService getUserService() {
+        return userService;
+    }
+
+    /**
+     * Sends an HTTP response.
+     *
+     * @param exchange the HTTP exchange
+     * @param statusCode the HTTP status code
+     * @param response the response body
+     * @throws IOException if an I/O error occurs
+     */
+    protected void sendResponse(final HttpExchange exchange, final int statusCode, final String response) throws IOException {
         byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(statusCode, responseBytes.length);
@@ -30,13 +69,28 @@ public abstract class BaseHandler implements HttpHandler {
         os.write(responseBytes);
         os.close();
     }
-    
-    protected void sendError(HttpExchange exchange, int statusCode, String message) throws IOException {
+
+    /**
+     * Sends an error response.
+     *
+     * @param exchange the HTTP exchange
+     * @param statusCode the HTTP status code
+     * @param message the error message
+     * @throws IOException if an I/O error occurs
+     */
+    protected void sendError(final HttpExchange exchange, final int statusCode, final String message) throws IOException {
         String jsonError = String.format("{\"error\": \"%s\"}", message.replace("\"", "\\\""));
         sendResponse(exchange, statusCode, jsonError);
     }
 
-    protected User authenticate(HttpExchange exchange) throws IOException {
+    /**
+     * Authenticates the user based on the Authorization header.
+     *
+     * @param exchange the HTTP exchange
+     * @return the authenticated User, or null if authentication fails
+     * @throws IOException if an I/O error occurs during response sending
+     */
+    protected User authenticate(final HttpExchange exchange) throws IOException {
         if (userService == null) {
             throw new IllegalStateException("UserService not initialized in handler");
         }
@@ -46,23 +100,45 @@ public abstract class BaseHandler implements HttpHandler {
             user = userService.getUserByToken(authHeader).orElse(null);
         }
         if (user == null) {
-            sendResponse(exchange, 401, "{\"error\": \"Unauthorized\"}");
+            sendResponse(exchange, HttpURLConnection.HTTP_UNAUTHORIZED, "{\"error\": \"Unauthorized\"}");
             return null;
         }
         return user;
     }
-    
-    protected <T> T readBody(HttpExchange exchange, Class<T> clazz) throws IOException {
+
+    /**
+     * Reads and parses the request body.
+     *
+     * @param exchange the HTTP exchange
+     * @param clazz the class to parse into
+     * @param <T> the type of the object
+     * @return the parsed object
+     * @throws IOException if an I/O/Parsing error occurs
+     */
+    protected <T> T readBody(final HttpExchange exchange, final Class<T> clazz) throws IOException {
         InputStream requestBody = exchange.getRequestBody();
         return objectMapper.readValue(requestBody, clazz);
     }
-    
-    protected int parseIdFromPath(String path, int index) {
+
+    /**
+     * Parses an ID from the path.
+     *
+     * @param path the request path
+     * @param index the index of the path segment containing the ID
+     * @return the parsed ID
+     */
+    protected int parseIdFromPath(final String path, final int index) {
         String[] parts = path.split("/");
         return Integer.parseInt(parts[index]);
     }
-    
-    protected Map<String, String> parseQuery(String query) {
+
+    /**
+     * Parses the query string into a map.
+     *
+     * @param query the query string
+     * @return a map of query parameters
+     */
+    protected Map<String, String> parseQuery(final String query) {
         Map<String, String> result = new HashMap<>();
         if (query == null) {
             return result;

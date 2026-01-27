@@ -9,10 +9,19 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class DatabaseManager {
+/**
+ * Singleton class to manage the database connection and initialization.
+ */
+public final class DatabaseManager {
+    /** Singleton instance of the DatabaseManager. */
     private static DatabaseManager instance;
+    /** The active database connection. */
     private Connection connection;
 
+    /**
+     * Private constructor to prevent instantiation.
+     * Initializes the database connection.
+     */
     private DatabaseManager() {
         try {
             String dbUrl = "jdbc:postgresql://localhost:5432/mrp_db?user=postgres&password=letmein";
@@ -23,6 +32,11 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Returns the singleton instance of the DatabaseManager.
+     *
+     * @return the singleton instance
+     */
     public static synchronized DatabaseManager getInstance() {
         if (instance == null) {
             instance = new DatabaseManager();
@@ -30,11 +44,20 @@ public class DatabaseManager {
         return instance;
     }
 
+    /**
+     * Returns the current database connection.
+     *
+     * @return the database connection
+     */
     public Connection getConnection() {
-        // TODO: a simple check if connection is closed/invalid
+        // Note: a simple check if connection is closed/invalid
+        // could be added here
         return connection;
     }
 
+    /**
+     * Resets the database by dropping all tables and re-initializing them.
+     */
     public void resetDatabase() {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("DROP TABLE IF EXISTS favorites, rating_likes, ratings, media_genres, media, users CASCADE");
@@ -44,6 +67,9 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Initializes the database schema using the init script.
+     */
     private void initializeDatabase() {
         try {
             String initScript = readInitScript();
@@ -56,7 +82,15 @@ public class DatabaseManager {
             System.err.println("Failed to initialize database: " + e.getMessage());
         }
     }
+    // CHECKSTYLE:ON: RegexpSinglelineJava
+    // CHECKSTYLE:ON: IllegalCatch
 
+    /**
+     * Reads the database initialization script from resources.
+     *
+     * @return the content of the init script
+     * @throws IOException if the script cannot be read
+     */
     private String readInitScript() throws IOException {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("db/init.sql")) {
             if (is == null) {

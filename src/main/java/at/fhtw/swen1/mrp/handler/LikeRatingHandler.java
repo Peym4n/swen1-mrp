@@ -7,36 +7,57 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class LikeRatingHandler extends BaseHandler {
+/**
+ * Handler for liking a rating.
+ */
+public final class LikeRatingHandler extends BaseHandler {
+    /** Service for rating operations. */
     private final RatingService ratingService;
 
-    public LikeRatingHandler(UserService userService, RatingService ratingService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
-        this.ratingService = ratingService;
+    /** Index of the rating ID in the path. */
+    private static final int RATING_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param ratingServiceArg the rating service
+     * @param objectMapperArg the object mapper
+     */
+    public LikeRatingHandler(final UserService userServiceArg,
+                             final RatingService ratingServiceArg,
+                             final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
+        this.ratingService = ratingServiceArg;
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD, "Method Not Allowed");
             return;
         }
 
         try {
             User user = authenticate(exchange);
-            if (user == null) return;
+            if (user == null) {
+                return;
+            }
 
             // /api/ratings/{id}/like
-            int ratingId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
+            int ratingId = parseIdFromPath(exchange.getRequestURI().getPath(), RATING_ID_PATH_INDEX);
 
             ratingService.likeRating(user.getId(), ratingId);
-            sendResponse(exchange, 200, "{\"message\": \"Rating liked\"}");
+            sendResponse(exchange, HttpURLConnection.HTTP_OK, "{\"message\": \"Rating liked\"}");
         } catch (IllegalArgumentException e) {
-            sendError(exchange, 404, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_NOT_FOUND,
+                    e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR,
+                    e.getMessage());
         }
     }
 }

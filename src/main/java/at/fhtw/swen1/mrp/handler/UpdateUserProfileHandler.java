@@ -7,39 +7,61 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
-public class UpdateUserProfileHandler extends BaseHandler {
+/**
+ * Handler for updating a user's profile.
+ */
+public final class UpdateUserProfileHandler extends BaseHandler {
 
-    public UpdateUserProfileHandler(UserService userService, ObjectMapper objectMapper) {
-        super(objectMapper, userService);
+    /** Index of the user ID in the path. */
+    private static final int USER_ID_PATH_INDEX = 3;
+
+    /**
+     * Constructor.
+     *
+     * @param userServiceArg the user service
+     * @param objectMapperArg the object mapper
+     */
+    public UpdateUserProfileHandler(final UserService userServiceArg,
+                                    final ObjectMapper objectMapperArg) {
+        super(objectMapperArg, userServiceArg);
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(final HttpExchange exchange) throws IOException {
         if (!"PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method Not Allowed");
+            sendError(exchange, HttpURLConnection.HTTP_BAD_METHOD,
+                    "Method Not Allowed");
             return;
         }
 
         try {
             User user = authenticate(exchange);
-            if (user == null) return;
+            if (user == null) {
+                return;
+            }
 
             // Path: /api/users/{id}/profile
-            int pathUserId = parseIdFromPath(exchange.getRequestURI().getPath(), 3);
+            int pathUserId = parseIdFromPath(exchange.getRequestURI().getPath(),
+                    USER_ID_PATH_INDEX);
 
             if (user.getId() != pathUserId) {
-                sendError(exchange, 403, "Forbidden");
+                sendError(exchange, HttpURLConnection.HTTP_FORBIDDEN,
+                        "Forbidden");
                 return;
             }
 
             UserDTO dto = readBody(exchange, UserDTO.class);
-            userService.updateProfile(user.getId(), dto.getEmail(), dto.getFavoriteGenre());
+            getUserService().updateProfile(user.getId(), dto.getEmail(),
+                    dto.getFavoriteGenre());
 
-            sendResponse(exchange, 200, "{\"message\": \"Profile updated\"}");
+            sendResponse(exchange, HttpURLConnection.HTTP_OK,
+                    "{\"message\": \"Profile updated\"}");
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 400, e.getMessage());
+            sendError(exchange, HttpURLConnection.HTTP_BAD_REQUEST,
+                    e.getMessage());
         }
     }
 }

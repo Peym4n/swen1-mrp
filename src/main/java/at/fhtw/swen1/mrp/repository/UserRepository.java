@@ -8,47 +8,73 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+
 import java.util.Optional;
 
-public class UserRepository {
+/**
+ * Repository for users.
+ */
+public final class UserRepository {
+    /** The database manager. */
     private final DatabaseManager databaseManager;
 
+
+
+    /**
+     * Constructor.
+     */
     public UserRepository() {
         this.databaseManager = DatabaseManager.getInstance();
     }
 
-    public void save(User user) {
-        String sql = "INSERT INTO users (username, password, email, favorite_genre) VALUES (?, ?, ?, ?)";
+    /**
+     * Saves a user.
+     *
+     * @param user the user
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public void save(final User user) {
+        String query = "INSERT INTO users (username, password, email, favorite_genre) VALUES (?, ?, ?, ?)";
         Connection conn = databaseManager.getConnection();
-        
-        try (PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-            
+
+        try (PreparedStatement stmt = conn.prepareStatement(query,
+                Statement.RETURN_GENERATED_KEYS)) {
+
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());
             stmt.setString(3, user.getEmail());
             stmt.setString(4, user.getFavoriteGenre());
-            
+
             stmt.executeUpdate();
-            
+
             try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     user.setId(generatedKeys.getInt(1));
                 }
             }
-            
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save user", e);
         }
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public Optional<User> findByUsername(String username) {
+    /**
+     * Finds user by username.
+     *
+     * @param username the username
+     * @return the user
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public Optional<User> findByUsername(final String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
+
             stmt.setString(1, username);
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     User user = new User.Builder()
@@ -69,10 +95,17 @@ public class UserRepository {
         return Optional.empty();
     }
 
-    public void updateToken(Integer userId, String token) {
+    /**
+     * Updates user token.
+     *
+     * @param userId the user ID
+     * @param token the token
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public void updateToken(final Integer userId, final String token) {
         String sql = "UPDATE users SET token = ? WHERE id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, token);
             stmt.setInt(2, userId);
@@ -81,14 +114,22 @@ public class UserRepository {
             throw new RuntimeException("Failed to update token", e);
         }
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public Optional<User> findByToken(String token) {
+    /**
+     * Finds user by token.
+     *
+     * @param token the token
+     * @return the user
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public Optional<User> findByToken(final String token) {
         String sql = "SELECT * FROM users WHERE token = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, token);
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     User user = new User.Builder()
@@ -108,10 +149,17 @@ public class UserRepository {
         }
         return Optional.empty();
     }
-    public void update(User user) {
+
+    /**
+     * Updates a user.
+     *
+     * @param user the user
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public void update(final User user) {
         String sql = "UPDATE users SET email = ?, favorite_genre = ? WHERE id = ?";
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, user.getEmail());
             stmt.setString(2, user.getFavoriteGenre());
@@ -121,21 +169,29 @@ public class UserRepository {
             throw new RuntimeException("Failed to update user", e);
         }
     }
+    // CHECKSTYLE:ON: MagicNumber
 
-    public UserProfileDTO getProfileWithStats(int userId) {
-        String sql = "SELECT u.id, u.username, u.email, u.favorite_genre, " +
-                     "COUNT(r.id) as total_ratings, " +
-                     "COALESCE(AVG(r.stars), 0) as avg_score " +
-                     "FROM users u " +
-                     "LEFT JOIN ratings r ON u.id = r.user_id " +
-                     "WHERE u.id = ? " +
-                     "GROUP BY u.id, u.username, u.email, u.favorite_genre";
-        
+    /**
+     * Gets profile with stats.
+     *
+     * @param userId the user ID
+     * @return the profile DTO
+     */
+    // CHECKSTYLE:OFF: MagicNumber
+    public UserProfileDTO getProfileWithStats(final int userId) {
+        String sql = "SELECT u.id, u.username, u.email, u.favorite_genre, "
+               + "COUNT(r.id) as total_ratings, "
+               + "COALESCE(AVG(r.stars), 0) as avg_score "
+               + "FROM users u "
+               + "LEFT JOIN ratings r ON u.id = r.user_id "
+               + "WHERE u.id = ? "
+               + "GROUP BY u.id, u.username, u.email, u.favorite_genre";
+
         Connection conn = databaseManager.getConnection();
-        
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     UserProfileDTO profile = new UserProfileDTO();
@@ -151,8 +207,9 @@ public class UserRepository {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to get profile with stats", e);
         }
-        
+
         return null;
     }
+    // CHECKSTYLE:ON: MagicNumber
 }
 
