@@ -1,0 +1,71 @@
+image: maven:3.9-eclipse-temurin-23
+
+services:
+  - name: postgres:15-alpine
+    alias: postgres
+
+variables:
+  # Postgres Service Configuration (Matches docker-compose.yaml)
+  POSTGRES_DB: mrp_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: letmein
+  POSTGRES_HOST_AUTH_METHOD: trust
+
+  # Application Environment Variables
+  DB_URL: jdbc:postgresql://postgres:5432/mrp_db
+  DB_USER: postgres
+  DB_PASSWORD: letmein
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: tcp://docker:2375
+
+stages:
+  - build
+  - lint
+  - test
+  - deploy
+
+# Stage 1: Build
+build_app:
+  stage: build
+  script:
+    - mvn package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+
+# Stage 2: Static Analysis
+static_analysis:
+  stage: lint
+  script:
+    # Requires maven-checkstyle-plugin in pom.xml
+    - mvn checkstyle:check
+
+# Stage 3: Test
+unit_tests:
+  stage: test
+  script:
+    # Runs Unit & Integration tests using the 'postgres' service
+    - mvn test
+
+# Stage 4: Deploy
+deploy_image:
+  stage: deploy
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+  script:
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
+        TAG="latest"
+      elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+        TAG="develop"
+      else
+        TAG="$CI_COMMIT_BRANCH"
+      fi
+    - docker build -t $DOCKER_USER/swen1-mrp:$TAG .
+    - docker push $DOCKER_USER/swen1-mrp:$TAG
+  only:
+    - main
+    - develop

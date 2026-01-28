@@ -24,8 +24,18 @@ public final class DatabaseManager {
      */
     private DatabaseManager() {
         try {
-            String dbUrl = "jdbc:postgresql://localhost:5432/mrp_db?user=postgres&password=letmein";
-            this.connection = DriverManager.getConnection(dbUrl);
+            // 1. Try to get credentials from Environment (CI/CD passes these)
+            String url = System.getenv("DB_URL");
+            String user = System.getenv("DB_USER");
+            String password = System.getenv("DB_PASSWORD");
+
+            // 2. Fallback to Local defaults if Env Vars are missing
+            if (url == null) {
+                url = "jdbc:postgresql://localhost:5432/mrp_db";
+                user = "postgres";
+                password = "letmein";
+            }
+            this.connection = DriverManager.getConnection(url, user, password);
             initializeDatabase();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to connect to database", e);
