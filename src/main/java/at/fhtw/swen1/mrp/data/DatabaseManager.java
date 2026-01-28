@@ -24,21 +24,20 @@ public final class DatabaseManager {
      */
     private DatabaseManager() {
         try {
-            // 1. Try to get credentials from Environment (CI/CD passes these)
+            // Get credentials exclusively from Environment
             String url = System.getenv("DB_URL");
             String user = System.getenv("DB_USER");
             String password = System.getenv("DB_PASSWORD");
 
-            // 2. Fallback to Local defaults if Env Vars are missing
-            if (url == null) {
-                url = "jdbc:postgresql://localhost:5432/mrp_db";
-                user = "postgres";
-                password = "letmein";
+            // STRICT VALIDATION: Fail if any variable is missing
+            if (url == null || user == null || password == null) {
+                throw new RuntimeException("CRITICAL ERROR: Database credentials are missing from environment variables. " +
+                        "Please ensure DB_URL, DB_USER, and DB_PASSWORD are set.");
             }
             this.connection = DriverManager.getConnection(url, user, password);
             initializeDatabase();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to connect to database", e);
+            throw new RuntimeException("Failed to connect to database (Check URL/Network)", e);
         }
     }
 

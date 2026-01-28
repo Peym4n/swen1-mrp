@@ -5,16 +5,10 @@ services:
     alias: postgres
 
 variables:
-  # Postgres Service Configuration (Matches docker-compose.yaml)
-  POSTGRES_DB: mrp_db
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: letmein
+  # Postgres Service Configuration
   POSTGRES_HOST_AUTH_METHOD: trust
 
   # Application Environment Variables
-  DB_URL: jdbc:postgresql://postgres:5432/mrp_db
-  DB_USER: postgres
-  DB_PASSWORD: letmein
   DOCKER_DRIVER: overlay2
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: "" # Disable TLS so Docker listens on port 2375
