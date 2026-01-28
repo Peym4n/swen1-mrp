@@ -66,7 +66,7 @@ deploy_image:
       else
         TAG="$CI_COMMIT_BRANCH"
       fi
-    # 1. Build using the branch name (e.g., develop)
+    # 1. Build using the branch name
     - docker build -t $DOCKER_USER/swen1-mrp:$TAG .
     # 2. Add a second tag with the unique Commit SHA
     - docker tag $DOCKER_USER/swen1-mrp:$TAG $DOCKER_USER/swen1-mrp:$CI_COMMIT_SHORT_SHA
