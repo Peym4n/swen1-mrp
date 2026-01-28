@@ -1,5 +1,7 @@
 package at.fhtw.swen1.mrp.data;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,15 +26,29 @@ public final class DatabaseManager {
      */
     private DatabaseManager() {
         try {
-            // Get credentials exclusively from Environment
+            // 1. Try System Environment (Priority for CI/Production)
             String url = System.getenv("DB_URL");
             String user = System.getenv("DB_USER");
             String password = System.getenv("DB_PASSWORD");
 
+            // 2. If missing, try .env file (Local Development)
+            if (url == null || user == null || password == null) {
+                Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+                if (url == null) {
+                    url = dotenv.get("DB_URL");
+                }
+                if (user == null) {
+                    user = dotenv.get("DB_USER");
+                }
+                if (password == null) {
+                    password = dotenv.get("DB_PASSWORD");
+                }
+            }
+
             // STRICT VALIDATION: Fail if any variable is missing
             if (url == null || user == null || password == null) {
-                throw new RuntimeException("CRITICAL ERROR: Database credentials are missing from environment variables. "
-                        + "Please ensure DB_URL, DB_USER, and DB_PASSWORD are set.");
+                throw new RuntimeException("CRITICAL ERROR: Database credentials are missing. "
+                        + "Please ensure DB_URL, DB_USER, and DB_PASSWORD are set in Environment or .env file.");
             }
             this.connection = DriverManager.getConnection(url, user, password);
             initializeDatabase();
