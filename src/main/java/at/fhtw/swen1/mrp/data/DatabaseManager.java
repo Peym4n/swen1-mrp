@@ -31,8 +31,8 @@ public final class DatabaseManager {
 
             // STRICT VALIDATION: Fail if any variable is missing
             if (url == null || user == null || password == null) {
-                throw new RuntimeException("CRITICAL ERROR: Database credentials are missing from environment variables. " +
-                        "Please ensure DB_URL, DB_USER, and DB_PASSWORD are set.");
+                throw new RuntimeException("CRITICAL ERROR: Database credentials are missing from environment variables. "
+                        + "Please ensure DB_URL, DB_USER, and DB_PASSWORD are set.");
             }
             this.connection = DriverManager.getConnection(url, user, password);
             initializeDatabase();
